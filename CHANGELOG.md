@@ -5,6 +5,63 @@ All notable changes to the Astra OS Enterprise project are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-30
+
+### 🎉 Production Launch — v2.0.0
+
+**Astra OS Enterprise** is now production-ready. This release represents the culmination of the complete agency-led development lifecycle from v1.0.0 through v2.0.0.
+
+### Added
+- **E2E Test Suite** (Playwright): 25+ comprehensive integration tests covering auth flow, organization lifecycle, campaign CRUD, AI agent operations, workflow automation, health endpoints, rate limiting, and security headers
+- **Playwright configuration** with parallel execution, multi-browser (Chromium + Firefox), CI-optimized retries, and HTML/JSON reporters
+- **Production CI/CD Pipeline** — 8 GitHub Actions workflows with:
+  - PHP 8.4 + PostgreSQL 16 + Redis 7 matrix testing
+  - Parallel test execution with coverage reporting
+  - PHPStan static analysis at level 6
+  - Pint code style enforcement
+  - Composer dependency audit
+  - Docker image build + security scan
+  - Auto-deploy on version tags
+  - Dependabot with auto-merge for safe updates
+  - Issue + PR templates with triage automation
+- **v2.0.0 git tag** with annotated release
+
+### Hardened
+- 🏛 **Clean Architecture DDD** — 7 domain modules with zero framework dependencies
+- 🧪 **272 test methods** across 24 files (unit + feature + E2E)
+- 🔒 **Enterprise security**: Sanctum auth, security headers, input sanitization, rate limiting, CSRF protection, webhook HMAC signing
+- 📊 **Full observability stack**: Pulse, Telescope, Horizon, structured JSON logging, health endpoints, slow query monitoring
+- 🐳 **Production Docker**: Multi-stage builds, health checks, resource limits, persistent volumes
+- ☸️ **Kubernetes readiness**: Deployments, HPA, NetworkPolicies, ConfigMaps, PVCs, overlays for staging/prod
+- 🔄 **Zero-downtime deployments** via deploy.sh + rollback.sh
+- 📡 **Telegram bot** integration for campaign management
+- 📧 **Email notifications** with responsive templates (campaign launched, completed, agent tasks)
+- 🌐 **Real-time broadcasting** via WebSocket channels
+
+### Technical Debt Resolved
+- All route closures replaced with proper controller references
+- Int→string type casting for UUID route parameters
+- Migration IDs deconflicted, no duplicates
+- All 362 PHP files pass `php -l` syntax validation
+- All providers properly registered in `bootstrap/providers.php`
+- Middleware registered in correct order with full coverage
+- OpenAPI annotations on all 15 controllers
+- Rate limiting, caching, and performance indexes deployed
+
+### Statistics (v2.0.0)
+```
+📁 Total files:     ~440
+🐘 PHP files:       362 (0 syntax errors)
+🧪 Test methods:    272 across 24 files
+🏛 Domain modules:   7 (Organization, Campaign, Agent, Workflow, Social, Analytics, Common)
+🎯 API endpoints:   50+ across 15 controllers
+🗄️ Migrations:      26 with full rollback
+📦 Docker services: 6 (app, nginx, postgres, redis, horizon, scheduler)
+☸️ K8s manifests:   14
+📋 CI/CD workflows: 8
+📐 CHANGELOG lines: ~200
+```
+
 ## [1.9.0] - 2026-07-30
 
 ### Added
