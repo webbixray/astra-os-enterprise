@@ -1,6 +1,8 @@
-name: dependabot-auto-merge
+name: Dependabot Auto-Merge
 
-on: pull_request
+on:
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -8,5 +10,48 @@ permissions:
 
 jobs:
   dependabot:
-    if: ${{ github.actor == 'dependabot[bot]' }}
-    uses: laravel/.github/.github/workflows/dependabot-auto-merge.yml@c265c45c41ccb723befb7a2b807dffff4595bd39
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Auto-merge for patch and minor updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          gh pr merge --auto --squash "$PR_URL" \
+            --subject "chore(deps): $(gh pr view "$PR_URL" --json title --jq .title)"
+
+      - name: Label production updates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            const updateType = '${{ steps.metadata.outputs.update-type }}';
+            const labels = ['dependencies'];
+
+            if (updateType === 'version-update:semver-patch') labels.push('patch');
+            else if (updateType === 'version-update:semver-minor') labels.push('minor');
+            else if (updateType === 'version-update:semver-major') labels.push('major', 'needs-review');
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: labels
+            });
+
+      - name: Approve patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: gh pr review --approve "$PR_URL" --body "Auto-approved patch update."

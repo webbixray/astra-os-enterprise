@@ -2,11 +2,88 @@ name: Issues
 
 on:
   issues:
-    types: [labeled]
+    types: [opened, labeled, reopened]
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
+  triage:
+    name: Issue Triage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-label issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const labelsToAdd = [];
+
+            // Auto-detect issue type from title/body keywords
+            if (/^bug|^fix|bug:|fix:|bugfix|broken|error|fails?|crash|regression/.test(title) || /bug report/i.test(title)) {
+              labelsToAdd.push('bug');
+            }
+            if (/^feature|^feat|feature:|feat:|request|suggestion|would like|wish/.test(title) || /feature request/i.test(title)) {
+              labelsToAdd.push('enhancement');
+            }
+            if (/question|help|how (to|do|can)|unclear|confused|docs\?/.test(title)) {
+              labelsToAdd.push('question');
+            }
+            if (/security|vulnerability|cve|exploit|xs[ss]|sql injection|unauthorized/.test(title) || /security/i.test(title)) {
+              labelsToAdd.push('security');
+            }
+            if (/docs?|documentation|readme|typo|spelling/.test(title) || /documentation/i.test(title)) {
+              labelsToAdd.push('documentation');
+            }
+            if (/deps?|dependenc|composer|npm|update.*version|bump/.test(title)) {
+              labelsToAdd.push('dependencies');
+            }
+            if (/good first|beginner|easy|starter|help wanted|contribute/.test(body) || body.includes('good first issue')) {
+              labelsToAdd.push('good first issue');
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labelsToAdd
+              });
+            }
+
   help-wanted:
-    uses: laravel/.github/.github/workflows/issues.yml@b019b7649633cd7149a2d2a4a6e3bba5d7e5ba01 # main
+    name: Help Wanted
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'help wanted') || github.event.action == 'labeled' && github.event.label.name == 'help wanted'
+    steps:
+      - name: Comment on help-wanted issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: 'This issue has been marked as **help wanted**. Contributions are welcome! ' +
+                    'If you are interested in working on this, please leave a comment and we can provide guidance.'
+            });
+
+  stale-management:
+    name: Stale Issue Management
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: 'This issue has been automatically marked as stale due to 60 days of inactivity. It will be closed in 14 days if no further activity occurs.'
+          close-issue-message: 'This issue has been closed due to inactivity. Feel free to reopen if needed.'
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'bug,security,enhancement,priority,help wanted'
+          operations-per-run: 100
