@@ -217,7 +217,7 @@ final class CampaignController extends Controller
     #[OA\Put(
         path: '/organizations/{organizationId}/campaigns/{campaignId}',
         summary: 'Update campaign',
-        description: 'Update an existing campaign's properties.',
+        description: "Update an existing campaign's properties.",
         tags: ['Campaigns'],
         security: [['bearerAuth' => []]],
         parameters: [

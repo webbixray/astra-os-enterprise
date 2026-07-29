@@ -202,7 +202,7 @@ final class WorkflowController extends Controller
     #[OA\Put(
         path: '/organizations/{organizationId}/workflows/{workflowId}',
         summary: 'Update workflow',
-        description: 'Update an existing workflow's nodes, edges, triggers, or variables.',
+        description: "Update an existing workflow's nodes, edges, triggers, or variables.",
         tags: ['Workflows'],
         security: [['bearerAuth' => []]],
         parameters: [

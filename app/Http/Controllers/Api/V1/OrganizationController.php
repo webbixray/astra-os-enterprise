@@ -187,7 +187,7 @@ final class OrganizationController extends Controller
     #[OA\Put(
         path: '/organizations/{organizationId}',
         summary: 'Update organization',
-        description: 'Update an existing organization's properties.',
+        description: "Update an existing organization's properties.",
         tags: ['Organizations'],
         security: [['bearerAuth' => []]],
         parameters: [

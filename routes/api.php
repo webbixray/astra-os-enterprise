@@ -35,14 +35,9 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login'])
         ->name('api.v1.auth.login');
 
-    // Health Check
-    Route::get('/health', function () {
-        return response()->json([
-            'status' => 'healthy',
-            'version' => config('astra-os.general.version', '1.0.0'),
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    })->name('api.v1.health');
+    // Health Check (legacy — delegates to the unified health controller)
+    Route::get('/health', [\App\Http\Controllers\Api\HealthController::class, 'liveness'])
+        ->name('api.v1.health');
 
     // =========================================================================
     // Protected Routes (Sanctum Auth Required)

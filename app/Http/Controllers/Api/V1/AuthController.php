@@ -253,7 +253,7 @@ final class AuthController extends Controller
     #[OA\Get(
         path: '/auth/me',
         summary: 'Get Current User',
-        description: 'Return the authenticated user's profile data.',
+        description: "Return the authenticated user's profile data.",
         tags: ['Authentication'],
         security: [['bearerAuth' => []]],
         responses: [

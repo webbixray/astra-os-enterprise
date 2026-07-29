@@ -165,7 +165,7 @@ final class CampaignCreativeController extends Controller
     #[OA\Put(
         path: '/organizations/{organizationId}/campaigns/{campaignId}/creatives/{creativeId}',
         summary: 'Update creative',
-        description: 'Update a creative asset's properties.',
+        description: "Update a creative asset's properties.",
         tags: ['Campaign Creatives'],
         security: [['bearerAuth' => []]],
         parameters: [

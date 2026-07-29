@@ -190,7 +190,7 @@ final class AgentController extends Controller
     #[OA\Put(
         path: '/organizations/{organizationId}/agents/{agentId}',
         summary: 'Update agent',
-        description: 'Update an agent's name, description, model, capabilities, or configuration.',
+        description: "Update an agent's name, description, model, capabilities, or configuration.",
         tags: ['Agents'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -342,7 +342,7 @@ final class AgentController extends Controller
     #[OA\Get(
         path: '/organizations/{organizationId}/agents/{agentId}/memory',
         summary: 'Get agent memory',
-        description: 'Return the agent's stored memory/context data.',
+        description: "Return the agent's stored memory/context data.",
         tags: ['Agents'],
         security: [['bearerAuth' => []]],
         parameters: [
