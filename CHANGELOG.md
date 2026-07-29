@@ -5,6 +5,39 @@ All notable changes to the Astra OS Enterprise project are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-30
+
+### Added
+- Production deployment script (deploy.sh) with zero-downtime releases
+- Rollback script (rollback.sh) for instant revert
+- Production PHP configuration (opcache, error handling, session security)
+- Nginx performance tuning (gzip, fastcgi cache, rate limiting, SSL)
+- Supervisor configuration for PHP-FPM, Horizon, scheduler
+- Redis configuration (persistence, AOF, memory policies, security)
+- Database and file backup script with retention policies
+- Production Docker Compose (PHP-FPM, Nginx, PostgreSQL 16, Redis 7, Horizon, Scheduler)
+- K8s Horizontal Pod Autoscaler (CPU 70%, memory 80%, scale behaviors)
+- Production-ready infrastructure configuration
+
+### Changed
+- Version bumped 1.6.0 → 1.7.0
+
+## [1.6.0] - 2026-07-30
+
+### Added
+- Performance caching configuration (config/performance.php)
+- CacheService with tag-based invalidation, cache warming, hit/miss stats
+- CacheResponse middleware for GET API response caching
+- QueryOptimizationServiceProvider with slow query logging
+- Database performance indexes (9 composite indexes on high-traffic tables)
+- CacheResponse middleware registered in API group
+- QueryOptimizationServiceProvider registered
+
+### Changed
+- bootstrap/app.php: registered CacheResponse middleware
+- bootstrap/providers.php: registered Pulse + QueryOptimization providers
+- Version bumped 1.5.0 → 1.6.0
+
 ## [1.5.0] - 2026-07-30
 
 ### Added

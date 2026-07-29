@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\InputSanitizer::class,
             \App\Http\Middleware\RequestMetrics::class,
+            \App\Http\Middleware\CacheResponse::class,
         ]);
 
         // Register middleware aliases
