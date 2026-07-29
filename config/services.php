@@ -35,4 +35,46 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Telegram Bot
+    |--------------------------------------------------------------------------
+    */
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME', 'AstraOSBot'),
+        'webhook_url' => env('TELEGRAM_WEBHOOK_URL'),
+        'commands' => [
+            'start' => 'Start interacting with Astra OS',
+            'help' => 'Show available commands',
+            'status' => 'Check system status',
+            'campaign' => 'Manage campaigns (list, show, create)',
+            'agent' => 'View agent status and tasks',
+            'analytics' => 'Quick analytics overview',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhooks
+    |--------------------------------------------------------------------------
+    */
+    'webhooks' => [
+        'secret' => env('WEBHOOK_SECRET'),
+        'timeout' => env('WEBHOOK_TIMEOUT', 10),
+        'max_retries' => env('WEBHOOK_MAX_RETRIES', 3),
+        'retry_delay' => env('WEBHOOK_RETRY_DELAY', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+    'notifications' => [
+        'channels' => ['database', 'mail', 'webhook'],
+        'default_channel' => 'database',
+        'batch_size' => env('NOTIFICATION_BATCH_SIZE', 100),
+    ],
+
 ];

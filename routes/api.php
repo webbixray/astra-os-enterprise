@@ -39,6 +39,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', [\App\Http\Controllers\Api\HealthController::class, 'liveness'])
         ->name('api.v1.health');
 
+    // Telegram Webhook (public — Telegram calls this)
+    Route::post('/telegram/webhook', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'webhook'])
+        ->name('api.v1.telegram.webhook');
+
     // =========================================================================
     // Protected Routes (Sanctum Auth Required)
     // =========================================================================
@@ -266,6 +270,33 @@ Route::prefix('v1')->group(function () {
             Route::get('/audit-logs', function () {
                 return response()->json(['message' => 'List audit logs - not yet implemented'], 501);
             });
+
+            // -- Export --
+            Route::prefix('export')->group(function () {
+                Route::get('/{type}', [\App\Http\Controllers\Api\ExportController::class, 'export']);
+                Route::get('/{type}/template', [\App\Http\Controllers\Api\ExportController::class, 'template']);
+            });
+
+            // -- Import --
+            Route::prefix('import')->group(function () {
+                Route::post('/{type}', [\App\Http\Controllers\Api\ImportController::class, 'import']);
+                Route::post('/{type}/validate', [\App\Http\Controllers\Api\ImportController::class, 'validate']);
+            });
+
+            // -- Webhooks --
+            Route::prefix('webhooks')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\WebhookController::class, 'index']);
+                Route::post('/', [\App\Http\Controllers\Api\WebhookController::class, 'store']);
+                Route::get('/{webhook}', [\App\Http\Controllers\Api\WebhookController::class, 'show']);
+                Route::put('/{webhook}', [\App\Http\Controllers\Api\WebhookController::class, 'update']);
+                Route::delete('/{webhook}', [\App\Http\Controllers\Api\WebhookController::class, 'destroy']);
+                Route::post('/{webhook}/test', [\App\Http\Controllers\Api\WebhookController::class, 'test']);
+            });
+
+            // -- Telegram Link --
+            Route::post('/telegram/link', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'link']);
+            Route::post('/telegram/verify-link', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'verifyLink']);
+            Route::post('/telegram/unlink', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'unlink']);
         });
 
         // -- Workflow Templates (Global) --

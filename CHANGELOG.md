@@ -5,6 +5,36 @@ All notable changes to the Astra OS Enterprise project are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-30
+
+### Added
+- Telegram bot integration
+  - TelegramService with message sending, webhook management, long polling
+  - TelegramWebhookController for receiving Telegram updates
+  - TelegramCommandParser with /help, /status, /campaign, /agent, /analytics commands
+  - SetWebhookCommand and PollUpdatesCommand artisan commands
+  - User telegram chat ID linking
+- Webhook system
+  - WebhookService with HMAC-SHA256 signed delivery, retry with backoff
+  - WebhookController (CRUD + test endpoint)
+  - Webhook endpoints migration
+- Notification system
+  - NotificationService with multi-channel delivery (database, mail, webhook)
+  - DatabaseChannel, MailChannel, WebhookChannel implementations
+  - CampaignLaunched, CampaignCompleted, AgentTaskCompleted notifications
+  - SendNotificationJob for async delivery
+  - Notification preferences migration
+- Export/Import functionality
+  - ExportController with CSV/JSON streaming exports
+  - ExportService supporting campaigns, agents, workflows, analytics, reports
+  - ImportController with dry-run validation
+  - ImportService with CSV/JSON parsing, validation, chunked insertion
+
+### Changed
+- routes/api.php: added export, import, webhook, telegram routes
+- config/services.php: added Telegram, webhook, notification config
+- Version bumped 1.4.0 → 1.5.0
+
 ## [1.4.0] - 2026-07-30
 
 ### Added

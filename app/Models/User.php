@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Infrastructure\Persistence\Models\WebhookEndpoint;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -50,6 +52,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the in-app notifications for the user.
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get the notification preference records for the user.
+     */
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /**
+     * Get the webhook endpoints registered by the user.
+     */
+    public function webhookEndpoints(): HasMany
+    {
+        return $this->hasMany(WebhookEndpoint::class);
+    }
+
+    /**
      * Check if user belongs to a specific organization.
      */
     public function belongsToOrganization(string $organizationId): bool
@@ -66,7 +92,7 @@ class User extends Authenticatable
     {
         $campaign = Campaign::find($campaignId);
 
-        if (!$campaign) {
+        if (! $campaign) {
             return false;
         }
 
@@ -80,7 +106,7 @@ class User extends Authenticatable
     {
         $agent = Agent::find($agentId);
 
-        if (!$agent) {
+        if (! $agent) {
             return false;
         }
 
@@ -94,7 +120,7 @@ class User extends Authenticatable
     {
         $workflow = Workflow::find($workflowId);
 
-        if (!$workflow) {
+        if (! $workflow) {
             return false;
         }
 
