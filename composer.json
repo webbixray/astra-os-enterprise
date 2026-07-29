@@ -17,6 +17,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "laravel/horizon": "^5.27",
+        "laravel/telescope": "^5.0",
         "laravel/pulse": "^1.3",
         "laravel/pennant": "^2.0",
         "spatie/laravel-permission": "^6.0",

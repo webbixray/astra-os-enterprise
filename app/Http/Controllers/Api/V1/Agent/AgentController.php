@@ -15,7 +15,26 @@ use App\Http\Resources\V1\AgentResource;
 use App\Infrastructure\Persistence\Models\Agent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: 'Agents', description: 'AI agent management — CRUD, task assignment, memory')]
+#[OA\Schema(
+    schema: 'Agent',
+    description: 'AI agent model',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', type: 'string', example: 'Content Writer'),
+        new OA\Property(property: 'role', type: 'string', example: 'writer'),
+        new OA\Property(property: 'description', type: 'string', example: 'Generates marketing copy'),
+        new OA\Property(property: 'model', type: 'string', example: 'gpt-4o'),
+        new OA\Property(property: 'status', type: 'string', enum: ['idle', 'busy', 'error'], example: 'idle'),
+        new OA\Property(property: 'organization_id', type: 'integer', example: 1),
+        new OA\Property(property: 'capabilities', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'configuration', type: 'object'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ]
+)]
 final class AgentController extends Controller
 {
     public function __construct(
@@ -27,6 +46,30 @@ final class AgentController extends Controller
     /**
      * List agents for an organization.
      */
+    #[OA\Get(
+        path: '/organizations/{organizationId}/agents',
+        summary: 'List agents',
+        description: 'Return all AI agents for an organization, optionally filtered by role/status.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\QueryParameter(name: 'role', description: 'Filter by role', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\QueryParameter(name: 'status', description: 'Filter by status', required: false, schema: new OA\Schema(type: 'string', enum: ['idle', 'busy', 'error'])),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'List of agents',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Agent')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function index(Request $request, string $organizationId): JsonResponse
     {
         $agents = Agent::where('organization_id', $organizationId)
@@ -43,6 +86,44 @@ final class AgentController extends Controller
     /**
      * Create a new agent.
      */
+    #[OA\Post(
+        path: '/organizations/{organizationId}/agents',
+        summary: 'Create agent',
+        description: 'Create a new AI agent with a specific role and capabilities.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'role', 'model'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', maxLength: 255, example: 'Content Writer'),
+                    new OA\Property(property: 'role', type: 'string', example: 'writer'),
+                    new OA\Property(property: 'description', type: 'string', example: 'Generates marketing copy'),
+                    new OA\Property(property: 'model', type: 'string', example: 'gpt-4o'),
+                    new OA\Property(property: 'capabilities', type: 'array', items: new OA\Items(type: 'string'), example: ['text-generation', 'summarization']),
+                    new OA\Property(property: 'configuration', type: 'object'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Agent created',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Agent created successfully.'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Agent'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function store(StoreAgentRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
@@ -68,6 +149,30 @@ final class AgentController extends Controller
     /**
      * Show an agent.
      */
+    #[OA\Get(
+        path: '/organizations/{organizationId}/agents/{agentId}',
+        summary: 'Show agent',
+        description: 'Return a single agent with its tasks.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Agent details',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Agent'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+        ]
+    )]
     public function show(string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::with('tasks')
@@ -82,6 +187,44 @@ final class AgentController extends Controller
     /**
      * Update an agent.
      */
+    #[OA\Put(
+        path: '/organizations/{organizationId}/agents/{agentId}',
+        summary: 'Update agent',
+        description: 'Update an agent's name, description, model, capabilities, or configuration.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', maxLength: 255),
+                    new OA\Property(property: 'description', type: 'string'),
+                    new OA\Property(property: 'model', type: 'string'),
+                    new OA\Property(property: 'capabilities', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'configuration', type: 'object'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Agent updated',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Agent updated successfully.'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Agent'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function update(StoreAgentRequest $request, string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::where('organization_id', $organizationId)
@@ -106,6 +249,22 @@ final class AgentController extends Controller
     /**
      * Delete an agent.
      */
+    #[OA\Delete(
+        path: '/organizations/{organizationId}/agents/{agentId}',
+        summary: 'Delete agent',
+        description: 'Permanently delete an agent.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Agent deleted', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Agent deleted successfully.')])),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+        ]
+    )]
     public function destroy(string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::where('organization_id', $organizationId)
@@ -121,6 +280,43 @@ final class AgentController extends Controller
     /**
      * Assign a task to an agent.
      */
+    #[OA\Post(
+        path: '/organizations/{organizationId}/agents/{agentId}/tasks',
+        summary: 'Assign task',
+        description: 'Assign a new task to an AI agent for processing.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['type', 'input'],
+                properties: [
+                    new OA\Property(property: 'type', type: 'string', example: 'text-generation', description: 'Task type'),
+                    new OA\Property(property: 'input', type: 'object', description: 'Task input data'),
+                    new OA\Property(property: 'parent_task_id', type: 'integer', nullable: true, description: 'Parent task ID for subtasks'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task assigned',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Task assigned successfully.'),
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function assignTask(AssignTaskRequest $request, string $organizationId, string $agentId): JsonResponse
     {
         $validated = $request->validated();
@@ -143,6 +339,30 @@ final class AgentController extends Controller
     /**
      * Get agent memory.
      */
+    #[OA\Get(
+        path: '/organizations/{organizationId}/agents/{agentId}/memory',
+        summary: 'Get agent memory',
+        description: 'Return the agent's stored memory/context data.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Agent memory',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+        ]
+    )]
     public function getMemory(string $organizationId, string $agentId): JsonResponse
     {
         $result = $this->getAgentMemoryUseCase->execute($agentId);
@@ -153,6 +373,22 @@ final class AgentController extends Controller
     /**
      * Clear agent memory.
      */
+    #[OA\Delete(
+        path: '/organizations/{organizationId}/agents/{agentId}/memory',
+        summary: 'Clear agent memory',
+        description: 'Clear all stored memory and task history for an agent.',
+        tags: ['Agents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\PathParameter(name: 'organizationId', description: 'Organization ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\PathParameter(name: 'agentId', description: 'Agent ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Memory cleared', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Agent memory cleared successfully.')])),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Not found'),
+        ]
+    )]
     public function clearMemory(string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::where('organization_id', $organizationId)->findOrFail($agentId);

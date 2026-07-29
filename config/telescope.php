@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Providers\TelescopeServiceProvider;
-
 return [
 
     /*
@@ -66,19 +64,6 @@ return [
             'chunk' => 1000,
         ],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Telescope Master Switch
-    |--------------------------------------------------------------------------
-    |
-    | You can completely disable Telescope from recording data by setting
-    | this to false. If the application is not in a "local" environment,
-    | Telescope will be disabled automatically.
-    |
-    */
-
-    'enabled' => env('TELESCOPE_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------

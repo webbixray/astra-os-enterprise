@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Global middleware
         $middleware->appendToGroup('api', [
             \App\Http\Middleware\ForceJsonResponse::class,
+            \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\InputSanitizer::class,
         ]);
 
         // Register middleware aliases
