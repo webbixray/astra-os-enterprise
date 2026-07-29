@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -89,7 +89,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache composer dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-php${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -143,7 +143,7 @@ jobs:
           REDIS_PORT: 6379
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         if: success() || failure()
         with:
           file: coverage.xml
@@ -151,7 +151,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@v2.3.6
         if: success() || failure()
         with:
           file: coverage.cobertura.xml
@@ -160,7 +160,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload test results to GitHub
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: success() || failure()
         with:
           name: PHP ${{ matrix.php }} Test Results
@@ -199,7 +199,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -265,7 +265,7 @@ jobs:
     if: failure() && github.event_name == 'schedule'
     steps:
       - name: Notify on test failure
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v4
         with:
           payload: |
             {
