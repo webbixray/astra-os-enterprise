@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'force-json' => \App\Http\Middleware\ForceJsonResponse::class,
             'organization.access' => \App\Http\Middleware\OrganizationAccess::class,
             'audit.logger' => \App\Http\Middleware\AuditLogger::class,
+            'api.version' => \App\Http\Middleware\ApiVersion::class,
         ]);
 
         // API rate limiting

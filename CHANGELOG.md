@@ -8,14 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Telegram bot integration for campaign management
-- Webhook system for external platform integrations
-- WebSocket real-time updates for campaign metrics
-- Export/Import functionality for campaigns and analytics
+- OpenAPI/Swagger annotations on all 15 API controllers
+- Full OA tags, path params, request bodies, response schemas
 
 ### Changed
-- Upgraded API rate limiting to per-user tiers
-- Enhanced error response standardization
+- Enhanced API documentation generation
+
+## [1.2.0] - 2026-07-30
+
+### Added
+- OpenAPI/Swagger documentation configuration (config/openapi.php)
+- Standardized API response trait (App\Http\Responses\ApiResponse)
+  - success(), created(), noContent(), error(), notFound()
+  - unauthorized(), forbidden(), validationError(), paginated()
+- API version middleware (X-API-Version header support)
+- Laravel Horizon configuration with multi-environment queue workers
+- Laravel Telescope configuration with all watchers enabled
+- Rate limiting configuration
+- Controller method improvements for consistency
+
+### Changed
+- Version bumped 1.1.0 → 1.2.0
+- API response standardization across all endpoints
 
 ## [1.1.0] - 2026-07-30
 
