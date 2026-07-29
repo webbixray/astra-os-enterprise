@@ -13,7 +13,7 @@ final class SocialAnalyticsController extends Controller
     /**
      * Get social analytics overview.
      */
-    public function overview(Request $request, int $organizationId): JsonResponse
+    public function overview(Request $request, string $organizationId): JsonResponse
     {
         $period = $request->period ?? '30d';
 
@@ -37,7 +37,7 @@ final class SocialAnalyticsController extends Controller
     /**
      * Get analytics breakdown by platform.
      */
-    public function platformBreakdown(Request $request, int $organizationId): JsonResponse
+    public function platformBreakdown(Request $request, string $organizationId): JsonResponse
     {
         // In production: query analytics grouped by platform
         return response()->json([
@@ -53,7 +53,7 @@ final class SocialAnalyticsController extends Controller
     /**
      * Get best posting times based on historical data.
      */
-    public function bestPostingTimes(int $organizationId): JsonResponse
+    public function bestPostingTimes(string $organizationId): JsonResponse
     {
         return response()->json([
             'data' => [

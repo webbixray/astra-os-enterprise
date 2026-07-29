@@ -23,7 +23,7 @@ final class CampaignAnalyticsController extends Controller
     /**
      * Get analytics for a specific campaign.
      */
-    public function show(Request $request, int $organizationId, int $campaignId): JsonResponse
+    public function show(Request $request, string $organizationId, string $campaignId): JsonResponse
     {
         $dto = new AnalyticsQueryDTO(
             campaignId: $campaignId,
@@ -41,7 +41,7 @@ final class CampaignAnalyticsController extends Controller
     /**
      * Get analytics overview for all campaigns in an organization.
      */
-    public function overview(Request $request, int $organizationId): JsonResponse
+    public function overview(Request $request, string $organizationId): JsonResponse
     {
         $period = $request->period ?? '30d';
 
@@ -62,7 +62,7 @@ final class CampaignAnalyticsController extends Controller
     /**
      * Export analytics report.
      */
-    public function export(Request $request, int $organizationId, int $campaignId): JsonResponse
+    public function export(Request $request, string $organizationId, string $campaignId): JsonResponse
     {
         $dto = new AnalyticsQueryDTO(
             campaignId: $campaignId,

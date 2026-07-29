@@ -21,7 +21,7 @@ final class AgentTaskController extends Controller
     /**
      * List tasks for an agent.
      */
-    public function index(Request $request, int $organizationId, int $agentId): JsonResponse
+    public function index(Request $request, string $organizationId, string $agentId): JsonResponse
     {
         Agent::where('organization_id', $organizationId)->findOrFail($agentId);
 
@@ -43,7 +43,7 @@ final class AgentTaskController extends Controller
     /**
      * Show a task.
      */
-    public function show(int $organizationId, int $agentId, int $taskId): JsonResponse
+    public function show(string $organizationId, string $agentId, string $taskId): JsonResponse
     {
         $task = AgentTask::where('agent_id', $agentId)->findOrFail($taskId);
 
@@ -55,7 +55,7 @@ final class AgentTaskController extends Controller
     /**
      * Retry a failed task.
      */
-    public function retry(int $organizationId, int $agentId, int $taskId): JsonResponse
+    public function retry(string $organizationId, string $agentId, string $taskId): JsonResponse
     {
         $task = AgentTask::where('agent_id', $agentId)->findOrFail($taskId);
 
@@ -76,7 +76,7 @@ final class AgentTaskController extends Controller
     /**
      * Cancel a pending task.
      */
-    public function cancel(int $organizationId, int $agentId, int $taskId): JsonResponse
+    public function cancel(string $organizationId, string $agentId, string $taskId): JsonResponse
     {
         $task = AgentTask::where('agent_id', $agentId)->findOrFail($taskId);
 

@@ -29,7 +29,7 @@ final class CampaignController extends Controller
     /**
      * List campaigns for an organization.
      */
-    public function index(Request $request, int $organizationId): JsonResponse
+    public function index(Request $request, string $organizationId): JsonResponse
     {
         $campaigns = Campaign::where('organization_id', $organizationId)
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
@@ -50,7 +50,7 @@ final class CampaignController extends Controller
     /**
      * Create a new campaign.
      */
-    public function store(StoreCampaignRequest $request, int $organizationId): JsonResponse
+    public function store(StoreCampaignRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
 
@@ -79,7 +79,7 @@ final class CampaignController extends Controller
     /**
      * Show a campaign.
      */
-    public function show(int $organizationId, int $campaignId): JsonResponse
+    public function show(string $organizationId, string $campaignId): JsonResponse
     {
         $campaign = Campaign::with('analytics')
             ->where('organization_id', $organizationId)
@@ -93,7 +93,7 @@ final class CampaignController extends Controller
     /**
      * Update a campaign.
      */
-    public function update(UpdateCampaignRequest $request, int $organizationId, int $campaignId): JsonResponse
+    public function update(UpdateCampaignRequest $request, string $organizationId, string $campaignId): JsonResponse
     {
         $campaign = Campaign::where('organization_id', $organizationId)
             ->findOrFail($campaignId);
@@ -123,7 +123,7 @@ final class CampaignController extends Controller
     /**
      * Launch a campaign.
      */
-    public function launch(int $organizationId, int $campaignId): JsonResponse
+    public function launch(string $organizationId, string $campaignId): JsonResponse
     {
         Campaign::where('organization_id', $organizationId)->findOrFail($campaignId);
 
@@ -137,7 +137,7 @@ final class CampaignController extends Controller
     /**
      * Pause a campaign.
      */
-    public function pause(int $organizationId, int $campaignId): JsonResponse
+    public function pause(string $organizationId, string $campaignId): JsonResponse
     {
         Campaign::where('organization_id', $organizationId)->findOrFail($campaignId);
 
@@ -151,7 +151,7 @@ final class CampaignController extends Controller
     /**
      * Archive a campaign.
      */
-    public function archive(int $organizationId, int $campaignId): JsonResponse
+    public function archive(string $organizationId, string $campaignId): JsonResponse
     {
         $campaign = Campaign::where('organization_id', $organizationId)
             ->findOrFail($campaignId);
@@ -166,7 +166,7 @@ final class CampaignController extends Controller
     /**
      * Duplicate a campaign.
      */
-    public function duplicate(int $organizationId, int $campaignId): JsonResponse
+    public function duplicate(string $organizationId, string $campaignId): JsonResponse
     {
         $campaign = Campaign::where('organization_id', $organizationId)
             ->findOrFail($campaignId);
@@ -188,7 +188,7 @@ final class CampaignController extends Controller
     /**
      * Delete a campaign.
      */
-    public function destroy(int $organizationId, int $campaignId): JsonResponse
+    public function destroy(string $organizationId, string $campaignId): JsonResponse
     {
         $campaign = Campaign::where('organization_id', $organizationId)
             ->findOrFail($campaignId);

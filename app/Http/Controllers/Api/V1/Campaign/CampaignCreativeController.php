@@ -16,7 +16,7 @@ final class CampaignCreativeController extends Controller
     /**
      * List creatives for a campaign.
      */
-    public function index(int $organizationId, int $campaignId): JsonResponse
+    public function index(string $organizationId, string $campaignId): JsonResponse
     {
         Campaign::where('organization_id', $organizationId)->findOrFail($campaignId);
 
@@ -30,7 +30,7 @@ final class CampaignCreativeController extends Controller
     /**
      * Create a new creative for a campaign.
      */
-    public function store(StoreCreativeRequest $request, int $organizationId, int $campaignId): JsonResponse
+    public function store(StoreCreativeRequest $request, string $organizationId, string $campaignId): JsonResponse
     {
         Campaign::where('organization_id', $organizationId)->findOrFail($campaignId);
 
@@ -48,7 +48,7 @@ final class CampaignCreativeController extends Controller
     /**
      * Show a creative.
      */
-    public function show(int $organizationId, int $campaignId, int $creativeId): JsonResponse
+    public function show(string $organizationId, string $campaignId, string $creativeId): JsonResponse
     {
         $creative = Creative::where('campaign_id', $campaignId)->findOrFail($creativeId);
 
@@ -58,7 +58,7 @@ final class CampaignCreativeController extends Controller
     /**
      * Update a creative.
      */
-    public function update(StoreCreativeRequest $request, int $organizationId, int $campaignId, int $creativeId): JsonResponse
+    public function update(StoreCreativeRequest $request, string $organizationId, string $campaignId, string $creativeId): JsonResponse
     {
         $creative = Creative::where('campaign_id', $campaignId)->findOrFail($creativeId);
 
@@ -73,7 +73,7 @@ final class CampaignCreativeController extends Controller
     /**
      * Approve a creative.
      */
-    public function approve(int $organizationId, int $campaignId, int $creativeId): JsonResponse
+    public function approve(string $organizationId, string $campaignId, string $creativeId): JsonResponse
     {
         $creative = Creative::where('campaign_id', $campaignId)->findOrFail($creativeId);
         $creative->update(['status' => 'approved', 'approved_at' => now()]);
@@ -87,7 +87,7 @@ final class CampaignCreativeController extends Controller
     /**
      * Reject a creative.
      */
-    public function reject(Request $request, int $organizationId, int $campaignId, int $creativeId): JsonResponse
+    public function reject(Request $request, string $organizationId, string $campaignId, string $creativeId): JsonResponse
     {
         $creative = Creative::where('campaign_id', $campaignId)->findOrFail($creativeId);
         $creative->update([

@@ -25,7 +25,7 @@ final class SocialPostController extends Controller
     /**
      * List social posts for an organization.
      */
-    public function index(Request $request, int $organizationId): JsonResponse
+    public function index(Request $request, string $organizationId): JsonResponse
     {
         $posts = SocialPost::where('organization_id', $organizationId)
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
@@ -46,7 +46,7 @@ final class SocialPostController extends Controller
     /**
      * Create a new social post.
      */
-    public function store(StoreSocialPostRequest $request, int $organizationId): JsonResponse
+    public function store(StoreSocialPostRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
 
@@ -72,7 +72,7 @@ final class SocialPostController extends Controller
     /**
      * Show a social post.
      */
-    public function show(int $organizationId, int $postId): JsonResponse
+    public function show(string $organizationId, string $postId): JsonResponse
     {
         $post = SocialPost::where('organization_id', $organizationId)
             ->with('socialAccount')
@@ -86,7 +86,7 @@ final class SocialPostController extends Controller
     /**
      * Update a social post.
      */
-    public function update(StoreSocialPostRequest $request, int $organizationId, int $postId): JsonResponse
+    public function update(StoreSocialPostRequest $request, string $organizationId, string $postId): JsonResponse
     {
         $post = SocialPost::where('organization_id', $organizationId)
             ->findOrFail($postId);
@@ -114,7 +114,7 @@ final class SocialPostController extends Controller
     /**
      * Schedule a post for future publication.
      */
-    public function schedule(Request $request, int $organizationId, int $postId): JsonResponse
+    public function schedule(Request $request, string $organizationId, string $postId): JsonResponse
     {
         $validated = $request->validate([
             'scheduled_at' => 'required|date|after:now',
@@ -134,7 +134,7 @@ final class SocialPostController extends Controller
     /**
      * Publish a post immediately.
      */
-    public function publish(int $organizationId, int $postId): JsonResponse
+    public function publish(string $organizationId, string $postId): JsonResponse
     {
         $post = SocialPost::where('organization_id', $organizationId)
             ->findOrFail($postId);
@@ -162,7 +162,7 @@ final class SocialPostController extends Controller
     /**
      * Delete a social post.
      */
-    public function destroy(int $organizationId, int $postId): JsonResponse
+    public function destroy(string $organizationId, string $postId): JsonResponse
     {
         $post = SocialPost::where('organization_id', $organizationId)
             ->findOrFail($postId);

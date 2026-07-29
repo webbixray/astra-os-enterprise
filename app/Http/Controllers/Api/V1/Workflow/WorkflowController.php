@@ -24,7 +24,7 @@ final class WorkflowController extends Controller
     /**
      * List workflows for an organization.
      */
-    public function index(Request $request, int $organizationId): JsonResponse
+    public function index(Request $request, string $organizationId): JsonResponse
     {
         $workflows = Workflow::where('organization_id', $organizationId)
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
@@ -44,7 +44,7 @@ final class WorkflowController extends Controller
     /**
      * Create a new workflow.
      */
-    public function store(StoreWorkflowRequest $request, int $organizationId): JsonResponse
+    public function store(StoreWorkflowRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
 
@@ -69,7 +69,7 @@ final class WorkflowController extends Controller
     /**
      * Show a workflow.
      */
-    public function show(int $organizationId, int $workflowId): JsonResponse
+    public function show(string $organizationId, string $workflowId): JsonResponse
     {
         $workflow = Workflow::where('organization_id', $organizationId)
             ->findOrFail($workflowId);
@@ -82,7 +82,7 @@ final class WorkflowController extends Controller
     /**
      * Update a workflow.
      */
-    public function update(StoreWorkflowRequest $request, int $organizationId, int $workflowId): JsonResponse
+    public function update(StoreWorkflowRequest $request, string $organizationId, string $workflowId): JsonResponse
     {
         $workflow = Workflow::where('organization_id', $organizationId)
             ->findOrFail($workflowId);
@@ -107,7 +107,7 @@ final class WorkflowController extends Controller
     /**
      * Activate a workflow.
      */
-    public function activate(int $organizationId, int $workflowId): JsonResponse
+    public function activate(string $organizationId, string $workflowId): JsonResponse
     {
         $this->activateWorkflowUseCase->execute($workflowId, true);
 
@@ -119,7 +119,7 @@ final class WorkflowController extends Controller
     /**
      * Deactivate a workflow.
      */
-    public function deactivate(int $organizationId, int $workflowId): JsonResponse
+    public function deactivate(string $organizationId, string $workflowId): JsonResponse
     {
         $this->activateWorkflowUseCase->execute($workflowId, false);
 
@@ -131,7 +131,7 @@ final class WorkflowController extends Controller
     /**
      * Duplicate a workflow.
      */
-    public function duplicate(int $organizationId, int $workflowId): JsonResponse
+    public function duplicate(string $organizationId, string $workflowId): JsonResponse
     {
         $workflow = Workflow::where('organization_id', $organizationId)
             ->findOrFail($workflowId);
@@ -150,7 +150,7 @@ final class WorkflowController extends Controller
     /**
      * Delete a workflow.
      */
-    public function destroy(int $organizationId, int $workflowId): JsonResponse
+    public function destroy(string $organizationId, string $workflowId): JsonResponse
     {
         $workflow = Workflow::where('organization_id', $organizationId)
             ->findOrFail($workflowId);

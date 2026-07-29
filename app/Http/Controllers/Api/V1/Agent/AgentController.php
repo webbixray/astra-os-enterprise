@@ -27,7 +27,7 @@ final class AgentController extends Controller
     /**
      * List agents for an organization.
      */
-    public function index(Request $request, int $organizationId): JsonResponse
+    public function index(Request $request, string $organizationId): JsonResponse
     {
         $agents = Agent::where('organization_id', $organizationId)
             ->when($request->role, fn ($q, $role) => $q->where('role', $role))
@@ -43,7 +43,7 @@ final class AgentController extends Controller
     /**
      * Create a new agent.
      */
-    public function store(StoreAgentRequest $request, int $organizationId): JsonResponse
+    public function store(StoreAgentRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
 
@@ -68,7 +68,7 @@ final class AgentController extends Controller
     /**
      * Show an agent.
      */
-    public function show(int $organizationId, int $agentId): JsonResponse
+    public function show(string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::with('tasks')
             ->where('organization_id', $organizationId)
@@ -82,7 +82,7 @@ final class AgentController extends Controller
     /**
      * Update an agent.
      */
-    public function update(StoreAgentRequest $request, int $organizationId, int $agentId): JsonResponse
+    public function update(StoreAgentRequest $request, string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::where('organization_id', $organizationId)
             ->findOrFail($agentId);
@@ -104,9 +104,24 @@ final class AgentController extends Controller
     }
 
     /**
+     * Delete an agent.
+     */
+    public function destroy(string $organizationId, string $agentId): JsonResponse
+    {
+        $agent = Agent::where('organization_id', $organizationId)
+            ->findOrFail($agentId);
+
+        $agent->delete();
+
+        return response()->json([
+            'message' => 'Agent deleted successfully.',
+        ]);
+    }
+
+    /**
      * Assign a task to an agent.
      */
-    public function assignTask(AssignTaskRequest $request, int $organizationId, int $agentId): JsonResponse
+    public function assignTask(AssignTaskRequest $request, string $organizationId, string $agentId): JsonResponse
     {
         $validated = $request->validated();
 
@@ -128,7 +143,7 @@ final class AgentController extends Controller
     /**
      * Get agent memory.
      */
-    public function getMemory(int $organizationId, int $agentId): JsonResponse
+    public function getMemory(string $organizationId, string $agentId): JsonResponse
     {
         $result = $this->getAgentMemoryUseCase->execute($agentId);
 
@@ -138,7 +153,7 @@ final class AgentController extends Controller
     /**
      * Clear agent memory.
      */
-    public function clearMemory(int $organizationId, int $agentId): JsonResponse
+    public function clearMemory(string $organizationId, string $agentId): JsonResponse
     {
         $agent = Agent::where('organization_id', $organizationId)->findOrFail($agentId);
         $agent->tasks()->delete();

@@ -16,7 +16,7 @@ final class SocialAccountController extends Controller
     /**
      * List social accounts for an organization.
      */
-    public function index(int $organizationId): JsonResponse
+    public function index(string $organizationId): JsonResponse
     {
         $accounts = SocialAccount::where('organization_id', $organizationId)
             ->orderBy('platform')
@@ -30,7 +30,7 @@ final class SocialAccountController extends Controller
     /**
      * Connect a new social account.
      */
-    public function store(StoreSocialAccountRequest $request, int $organizationId): JsonResponse
+    public function store(StoreSocialAccountRequest $request, string $organizationId): JsonResponse
     {
         $validated = $request->validated();
         $validated['organization_id'] = $organizationId;
@@ -46,7 +46,7 @@ final class SocialAccountController extends Controller
     /**
      * Show a social account.
      */
-    public function show(int $organizationId, int $accountId): JsonResponse
+    public function show(string $organizationId, string $accountId): JsonResponse
     {
         $account = SocialAccount::where('organization_id', $organizationId)
             ->findOrFail($accountId);
@@ -59,7 +59,7 @@ final class SocialAccountController extends Controller
     /**
      * Update a social account.
      */
-    public function update(StoreSocialAccountRequest $request, int $organizationId, int $accountId): JsonResponse
+    public function update(StoreSocialAccountRequest $request, string $organizationId, string $accountId): JsonResponse
     {
         $account = SocialAccount::where('organization_id', $organizationId)
             ->findOrFail($accountId);
@@ -75,7 +75,7 @@ final class SocialAccountController extends Controller
     /**
      * Disconnect a social account.
      */
-    public function disconnect(int $organizationId, int $accountId): JsonResponse
+    public function disconnect(string $organizationId, string $accountId): JsonResponse
     {
         $account = SocialAccount::where('organization_id', $organizationId)
             ->findOrFail($accountId);
@@ -94,7 +94,7 @@ final class SocialAccountController extends Controller
     /**
      * Sync posts from the connected social account.
      */
-    public function sync(int $organizationId, int $accountId): JsonResponse
+    public function sync(string $organizationId, string $accountId): JsonResponse
     {
         $account = SocialAccount::where('organization_id', $organizationId)
             ->findOrFail($accountId);

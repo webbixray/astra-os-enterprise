@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\AuditLog;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -64,8 +65,47 @@ final class AuditLogger
 
         Log::channel('audit')->info('API Request', $logData);
 
-        // In production, this would also insert into an audit_logs table
-        // \App\Infrastructure\Persistence\Models\AuditLog::create($logData);
+        // Persist audit log to database
+        try {
+            AuditLog::create([
+                'user_id' => $user?->id,
+                'action' => $request->method() . ' ' . $request->path(),
+                'entity_type' => $this->resolveEntityType($request),
+                'entity_id' => $request->route('id') ?? $request->route('campaign') ?? $request->route('agent') ?? $request->route('workflow'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'new_values' => $request->except(['password', 'password_confirmation', 'access_token', 'refresh_token']),
+                'created_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to persist audit log entry: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Resolve the entity type from the request path.
+     */
+    private function resolveEntityType(Request $request): string
+    {
+        $path = $request->path();
+
+        if (str_contains($path, '/campaigns/')) {
+            return 'campaign';
+        }
+        if (str_contains($path, '/agents/')) {
+            return 'agent';
+        }
+        if (str_contains($path, '/workflows/')) {
+            return 'workflow';
+        }
+        if (str_contains($path, '/organizations/')) {
+            return 'organization';
+        }
+        if (str_contains($path, '/auth/')) {
+            return 'auth';
+        }
+
+        return 'api';
     }
 
     /**

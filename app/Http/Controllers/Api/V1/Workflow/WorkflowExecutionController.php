@@ -21,7 +21,7 @@ final class WorkflowExecutionController extends Controller
     /**
      * List executions for a workflow.
      */
-    public function index(int $organizationId, int $workflowId): JsonResponse
+    public function index(string $organizationId, string $workflowId): JsonResponse
     {
         Workflow::where('organization_id', $organizationId)->findOrFail($workflowId);
 
@@ -42,7 +42,7 @@ final class WorkflowExecutionController extends Controller
     /**
      * Show a specific execution.
      */
-    public function show(int $organizationId, int $workflowId, int $executionId): JsonResponse
+    public function show(string $organizationId, string $workflowId, string $executionId): JsonResponse
     {
         $execution = WorkflowExecution::where('workflow_id', $workflowId)
             ->findOrFail($executionId);
@@ -53,7 +53,7 @@ final class WorkflowExecutionController extends Controller
     /**
      * Execute a workflow.
      */
-    public function execute(ExecuteWorkflowRequest $request, int $organizationId, int $workflowId): JsonResponse
+    public function execute(ExecuteWorkflowRequest $request, string $organizationId, string $workflowId): JsonResponse
     {
         Workflow::where('organization_id', $organizationId)->findOrFail($workflowId);
 
@@ -73,7 +73,7 @@ final class WorkflowExecutionController extends Controller
     /**
      * Cancel a running execution.
      */
-    public function cancel(int $organizationId, int $workflowId, int $executionId): JsonResponse
+    public function cancel(string $organizationId, string $workflowId, string $executionId): JsonResponse
     {
         $execution = WorkflowExecution::where('workflow_id', $workflowId)
             ->where('id', $executionId)

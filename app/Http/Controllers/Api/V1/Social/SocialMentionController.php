@@ -20,7 +20,7 @@ final class SocialMentionController extends Controller
      *
      * In production, this would query the mentions table.
      */
-    public function index(Request $request, int $organizationId): JsonResponse
+    public function index(Request $request, string $organizationId): JsonResponse
     {
         $platform = $request->platform;
         $status = $request->status;
@@ -36,7 +36,7 @@ final class SocialMentionController extends Controller
     /**
      * Show a specific mention.
      */
-    public function show(int $organizationId, int $mentionId): JsonResponse
+    public function show(string $organizationId, string $mentionId): JsonResponse
     {
         // In production: Mention::where('organization_id', $organizationId)->findOrFail($mentionId)
         return response()->json(['data' => []]);
@@ -45,7 +45,7 @@ final class SocialMentionController extends Controller
     /**
      * Mark a mention as read.
      */
-    public function markRead(int $organizationId, int $mentionId): JsonResponse
+    public function markRead(string $organizationId, string $mentionId): JsonResponse
     {
         // In production: update mention status to 'read'
         return response()->json([
@@ -56,7 +56,7 @@ final class SocialMentionController extends Controller
     /**
      * Generate an AI-suggested reply for a mention.
      */
-    public function generateReply(int $organizationId, int $mentionId): JsonResponse
+    public function generateReply(string $organizationId, string $mentionId): JsonResponse
     {
         // In production: use ProcessMentionsUseCase to generate a single reply
         return response()->json([
@@ -70,7 +70,7 @@ final class SocialMentionController extends Controller
     /**
      * Send a reply to a mention.
      */
-    public function sendReply(Request $request, int $organizationId, int $mentionId): JsonResponse
+    public function sendReply(Request $request, string $organizationId, string $mentionId): JsonResponse
     {
         $validated = $request->validate([
             'reply' => 'required|string|max:2000',

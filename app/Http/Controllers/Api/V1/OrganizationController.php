@@ -70,7 +70,7 @@ final class OrganizationController extends Controller
     /**
      * Show an organization.
      */
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $organization = Organization::with('owner')->findOrFail($id);
 
@@ -84,7 +84,7 @@ final class OrganizationController extends Controller
     /**
      * Update an organization.
      */
-    public function update(UpdateOrganizationRequest $request, int $id): JsonResponse
+    public function update(UpdateOrganizationRequest $request, string $id): JsonResponse
     {
         $organization = Organization::findOrFail($id);
         Gate::authorize('update', $organization);
@@ -108,7 +108,7 @@ final class OrganizationController extends Controller
     /**
      * Invite a member to the organization.
      */
-    public function inviteMember(InviteMemberRequest $request, int $id): JsonResponse
+    public function inviteMember(InviteMemberRequest $request, string $id): JsonResponse
     {
         $organization = Organization::findOrFail($id);
         Gate::authorize('update', $organization);
@@ -129,7 +129,7 @@ final class OrganizationController extends Controller
     /**
      * Remove a member from the organization.
      */
-    public function removeMember(Request $request, int $id, int $memberId): JsonResponse
+    public function removeMember(Request $request, string $id, string $memberId): JsonResponse
     {
         $organization = Organization::findOrFail($id);
         Gate::authorize('update', $organization);

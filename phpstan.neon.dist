@@ -1,0 +1,22 @@
+parameters:
+    level: 6
+    paths:
+        - app
+        - config
+        - database/migrations
+        - database/seeders
+        - routes
+    excludePaths:
+        - app/Providers/*
+
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        - '#Method App\\Infrastructure\\Persistence\\Repositories\\Eloquent[\\w]+Repository::find\(\) has parameter #0 \$id with no type specified.#'
+        - '#Access to an undefined property#'
+
+    symfony:
+        container_xml_path: '%rootDir%/../../var/cache/dev/App_KernelDevDebugContainer.xml'
