@@ -5,6 +5,37 @@ All notable changes to the Astra OS Enterprise project are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-07-30
+
+### Added
+- Comprehensive README with architecture overview, quick start, API docs, deployment guide
+- MIT License file
+- Contributor Covenant Code of Conduct
+- Enhanced security documentation (SECURITY.md updated)
+- Dashboard UI views (welcome page, dashboard with stats, quick actions, activity feed)
+- Real-time broadcasting channels (campaign, agent, user, team channels)
+- Email notification templates (campaign launched, completed, agent task completed)
+
+### Changed
+- resources/views/:
+  - New welcome.blade.php landing page
+  - New dashboard/index.blade.php dashboard view
+  - New email templates (campaign-launched, campaign-completed, agent-task-completed)
+  - New email layout with responsive design
+- routes/channels.php: added campaign, agent, user, team channels
+- Version bumped 1.8.0 → 1.9.0
+
+## [1.8.0] - 2026-07-30
+
+### Added
+- Dashboard views and UI components
+- Email notification templates
+- WebSocket broadcasting channels
+- Welcome landing page
+
+### Changed
+- Version bumped 1.7.0 → 1.8.0
+
 ## [1.7.0] - 2026-07-30
 
 ### Added

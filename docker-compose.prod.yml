@@ -1,191 +1,493 @@
+# =============================================================================
+# Astra OS — Production Docker Compose
+# Services: PHP-FPM, Nginx, PostgreSQL 16, Redis 7, Horizon Workers,
+#           Scheduler, Reverb WebSocket, MinIO (optional S3)
+# =============================================================================
+
+name: astra-os-prod
+
+volumes:
+  astra_db_prod:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/lib/astra-os/postgres
+      o: bind
+  astra_redis_prod:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/lib/astra-os/redis
+      o: bind
+  astra_minio_prod:
+    driver: local
+  astra_caddy_data:
+    driver: local
+
+networks:
+  astra-prod:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: 3
+    compress: "true"
+
+x-deploy: &default-deploy
+  restart_policy:
+    condition: any
+    delay: 5s
+    max_attempts: 3
+    window: 120s
+  update_config:
+    parallelism: 1
+    delay: 10s
+    order: start-first
+    failure_action: rollback
+  rollback_config:
+    parallelism: 1
+    order: stop-first
+
+x-healthcheck-app: &hc-app
+  test: ["CMD", "healthcheck.sh"]
+  interval: 30s
+  timeout: 5s
+  start_period: 15s
+  retries: 3
+
+x-environment-app: &env-app
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: ${APP_URL:-https://astra-os.example.com}
+  LOG_CHANNEL: stack
+  LOG_LEVEL: warning
+  DB_CONNECTION: pgsql
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_DATABASE: ${DB_DATABASE:-astra_os}
+  DB_USERNAME: ${DB_USERNAME:-astra}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+  CACHE_STORE: redis
+  SESSION_DRIVER: redis
+  QUEUE_CONNECTION: redis
+  SESSION_LIFETIME: 120
+  FILESYSTEM_DISK: s3
+  AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-astra}
+  AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+  AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+  AWS_BUCKET: ${AWS_BUCKET:-astra-os-assets}
+  AWS_ENDPOINT: ${AWS_ENDPOINT:-http://minio:9000}
+  AWS_USE_PATH_STYLE_ENDPOINT: "true"
+
+# =============================================================================
+# Services
+# =============================================================================
 services:
+
+  # ---------------------------------------------------------------------------
+  # PHP-FPM Application Server (8.4, production-optimised)
+  # ---------------------------------------------------------------------------
   app:
-    image: ghcr.io/webbixray/astra-os-enterprise:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile
-      target: app
-    restart: unless-stopped
-    working_dir: /var/www/html
+      dockerfile: docker/php/Dockerfile
+      target: production
+      args:
+        PHP_VERSION: "8.4"
+        WWWGROUP: 82
+        WWWUSER: 82
+    image: astra-os/app:${APP_VERSION:-latest}
+    container_name: astra-os-prod-app
+    restart: always
     volumes:
-      - storage:/var/www/html/storage
-      - .env:/var/www/html/.env:ro
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/99-prod.ini:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./docker/scripts/healthcheck.sh:/usr/local/bin/healthcheck.sh:ro
+      - astra_caddy_data:/caddy-data:ro
     networks:
-      - astraos
+      - astra-prod
+    environment:
+      <<: *env-app
+    healthcheck:
+      <<: *hc-app
     deploy:
       resources:
         limits:
-          cpus: '2'
           memory: 512M
+          cpus: "1.0"
         reservations:
-          cpus: '0.5'
           memory: 256M
+          cpus: "0.5"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # Nginx (latest, with SSL termination)
+  # ---------------------------------------------------------------------------
+  web:
+    image: nginx:1.27-alpine
+    container_name: astra-os-prod-web
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx-performance.conf:/etc/nginx/conf.d/performance.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./public:/app/public:ro
+    networks:
+      - astra-prod
+    depends_on:
+      app:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "php", "artisan", "health:check"]
+      test: ["CMD", "nginx", "-t"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 (primary database)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: astra-os-prod-db
+    restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - astra_db_prod:/var/lib/postgresql/data
+      - ./docker/pgsql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - /var/backups/astra-os/postgres:/backups:rw
+    networks:
+      - astra-prod
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-astra_os}
+      POSTGRES_USER: ${DB_USERNAME:-astra}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: --data-checksums --encoding=UTF8
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-astra} -d ${DB_DATABASE:-astra_os}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "1.0"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 (cache, sessions, queues) with custom config
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: astra-os-prod-redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - astra_redis_prod:/data
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - astra-prod
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --maxmemory 1024mb
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # Laravel Horizon Workers (queue processing)
+  # ---------------------------------------------------------------------------
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    image: astra-os/app:${APP_VERSION:-latest}
+    container_name: astra-os-prod-horizon
+    restart: always
+    volumes:
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/99-prod.ini:ro
+      - ./docker/scripts/healthcheck.sh:/usr/local/bin/healthcheck.sh:ro
+    networks:
+      - astra-prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *env-app
+      APP_ENV: production
+      APP_DEBUG: "false"
+    command: php artisan horizon
+    healthcheck:
+      test: ["CMD", "php", "-r", "echo 'ok';"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+    logging: *default-logging
 
-  nginx:
-    image: nginx:1.27-alpine
+  # ---------------------------------------------------------------------------
+  # Laravel Scheduler (cron)
+  # ---------------------------------------------------------------------------
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    image: astra-os/app:${APP_VERSION:-latest}
+    container_name: astra-os-prod-scheduler
+    restart: always
+    volumes:
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/99-prod.ini:ro
+    networks:
+      - astra-prod
+    depends_on:
+      - db
+      - redis
+    environment:
+      <<: *env-app
+      APP_ENV: production
+      APP_DEBUG: "false"
+    command: php artisan schedule:work
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # Laravel Reverb WebSocket Server
+  # ---------------------------------------------------------------------------
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    image: astra-os/app:${APP_VERSION:-latest}
+    container_name: astra-os-prod-reverb
+    restart: always
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/99-prod.ini:ro
+    networks:
+      - astra-prod
+    depends_on:
+      - db
+      - redis
+    environment:
+      <<: *env-app
+      APP_ENV: production
+      APP_DEBUG: "false"
+      REVERB_HOST: 0.0.0.0
+      REVERB_PORT: 8080
+    command: php artisan reverb:start
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'echo @fsockopen(\"localhost\",8080) ? \"ok\" : \"err\";'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # MinIO (S3-compatible object storage, for local/private deployments)
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: astra-os-prod-minio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - astra_minio_prod:/data
+    networks:
+      - astra-prod
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-astra}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+      MINIO_DOMAIN: s3.astra-os.local
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    logging: *default-logging
+    profiles:
+      - minio
+      - storage
+      - full
+
+  # ---------------------------------------------------------------------------
+  # MinIO Bucket Setup (runs once after MinIO starts)
+  # ---------------------------------------------------------------------------
+  minio-setup:
+    image: minio/mc:latest
+    container_name: astra-os-prod-minio-setup
+    restart: no
+    networks:
+      - astra-prod
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-astra}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sleep 5;
+        mc alias set astra http://minio:9000 $${MINIO_ROOT_USER:-astra} $${MINIO_ROOT_PASSWORD};
+        mc mb astra/${AWS_BUCKET:-astra-os-assets} --ignore-existing;
+        mc policy set download astra/${AWS_BUCKET:-astra-os-assets} 2>/dev/null || true;
+        echo 'MinIO bucket setup complete.';
+    profiles:
+      - minio
+      - storage
+      - full
+
+  # ---------------------------------------------------------------------------
+  # Backup Service (runs scheduled pg_dump + file archive)
+  # ---------------------------------------------------------------------------
+  backup:
+    image: postgres:16-alpine
+    container_name: astra-os-prod-backup
+    restart: unless-stopped
+    volumes:
+      - /var/backups/astra-os:/backups:rw
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+    networks:
+      - astra-prod
+    environment:
+      DB_NAME: ${DB_DATABASE:-astra_os}
+      DB_USER: ${DB_USERNAME:-astra}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      DB_HOST: db
+      DB_PORT: 5432
+      S3_BUCKET: ${S3_BUCKET:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SLACK_WEBHOOK: ${SLACK_WEBHOOK:-}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl aws-cli >/dev/null 2>&1;
+        echo '0 1 * * * /usr/local/bin/backup.sh daily' | crontab -;
+        echo '0 3 * * 0 /usr/local/bin/backup.sh weekly' | crontab -;
+        echo '0 4 1 * * /usr/local/bin/backup.sh monthly' | crontab -;
+        crond -f -l 2
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    logging: *default-logging
+    profiles:
+      - backup
+      - full
+
+  # ---------------------------------------------------------------------------
+  # Caddy (automatic TLS/SSL reverse proxy — alternative to raw Nginx SSL)
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: astra-os-prod-caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./docker/nginx-performance.conf:/etc/nginx/astra-os-performance.conf:ro
-      - storage:/var/www/html/storage:ro
-    depends_on:
-      - app
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - astra_caddy_data:/data
+      - astra_caddy_data:/config
     networks:
-      - astraos
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 128M
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
+      - astra-prod
     environment:
-      POSTGRES_DB: astra_os
-      POSTGRES_USER: astra_os
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-      POSTGRES_INITDB_ARGS: --encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks:
-      - astraos
+      APP_URL: ${APP_URL:-https://astra-os.example.com}
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U astra_os"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: redis-server /usr/local/etc/redis/redis.conf
-    volumes:
-      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
-      - redis_data:/data
-    networks:
-      - astraos
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
           memory: 128M
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  horizon:
-    image: ghcr.io/webbixray/astra-os-enterprise:latest
-    restart: unless-stopped
-    command: php artisan horizon
-    volumes:
-      - storage:/var/www/html/storage
-      - .env:/var/www/html/.env:ro
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - astraos
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "php", "artisan", "horizon:status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  scheduler:
-    image: ghcr.io/webbixray/astra-os-enterprise:latest
-    restart: unless-stopped
-    command: php artisan schedule:work
-    volumes:
-      - storage:/var/www/html/storage
-      - .env:/var/www/html/.env:ro
-    environment:
-      - APP_ENV=production
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-    depends_on:
-      - app
-      - redis
-    networks:
-      - astraos
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-
-volumes:
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /var/lib/docker/volumes/astraos_postgres
-      o: bind
-  redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /var/lib/docker/volumes/astraos_redis
-      o: bind
-  storage:
-
-networks:
-  astraos:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+          cpus: "0.25"
+    logging: *default-logging
+    profiles:
+      - caddy
+      - full
