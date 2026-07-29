@@ -1,27 +1,106 @@
-*.log
-.DS_Store
-.env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-/.codex
-/.cursor/
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
-/public/fonts-manifest.dev.json
+# Astra OS - Enterprise Git Ignore
+# Comprehensive ignore rules for Laravel enterprise project
+
+# Dependencies
+/vendor/
+/node_modules/
+/.pnpm-store/
+/pnpm-lock.yaml
+
+# Laravel
+/.env
+/.env.production
+/.env.local
+/.env.*.local
+/storage/app/public/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/debugbar/*
+/storage/coverage/*
+!storage/app/public/.gitkeep
+!storage/framework/cache/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/views/.gitkeep
+!storage/logs/.gitkeep
+/bootstrap/cache/config.php
+/bootstrap/cache/packages.php
+/bootstrap/cache/routes.php
+/bootstrap/cache/services.php
+
+# Build artifacts
 /public/hot
+/public/build/
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
-_ide_helper.php
-Homestead.json
-Homestead.yaml
+
+# Logs and debug
+*.log
+*.debug
+.error_log
+storage/logs/*
+!storage/logs/.gitkeep
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 Thumbs.db
+*.sublime-workspace
+*.sublime-project
+.netbeans/
+nbproject/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+/tests/coverage/
+/tests/coverage-html/
+.phpunit.result.cache
+.phpunit.cache/
+.phpunit-watcher.yml
+
+# Code analysis
+.phpstan.result.json
+.php-cs-fixer.cache
+.php-cs-fixer.php
+.temp/
+
+# Docker
+/docker/php/.bash_history
+/docker/*/data/
+
+# Database
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+/database/astra_os.sqlite
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Certificates
+*.crt
+*.pem
+*.key
+
+# Coverage
+coverage/
+tests-output/
+phpunit-coverage/
+
+# Laravel Horizon
+horizon.log
+storage/logs/horizon-*.log

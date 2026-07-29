@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: astraos
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - configmap.yaml
+  - hpa.yaml
+  - postgres-statefulset.yaml
+  - redis-deployment.yaml
+  - network-policy.yaml
+  - pvc.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: astra-os
+
+images:
+  - name: ghcr.io/astraos/app
+    newTag: latest

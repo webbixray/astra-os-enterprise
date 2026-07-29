@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: astraos-config
+  namespace: astraos
+  labels:
+    app.kubernetes.io/name: astraos-config
+    app.kubernetes.io/part-of: astra-os
+data:
+  APP_NAME: "Astra OS"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "https://api.astraos.io"
+
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "astraos-postgres"
+  DB_PORT: "5432"
+  DB_DATABASE: "astraos"
+
+  REDIS_HOST: "astraos-redis"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  SESSION_DRIVER: "redis"
+  CACHE_STORE: "redis"
+  QUEUE_CONNECTION: "redis"
+  BROADCAST_CONNECTION: "redis"
+
+  SESSION_LIFETIME: "120"
+  SESSION_ENCRYPT: "false"
+
+  FILESYSTEM_DISK: "s3"
+  FILESYSTEM_CLOUD: "s3"
+
+  LOG_CHANNEL: "stack"
+  LOG_LEVEL: "warning"
+
+  MAIL_MAILER: "ses"
+  MAIL_FROM_ADDRESS: "noreply@astraos.io"
+  MAIL_FROM_NAME: "Astra OS"
+
+  ASTRA_OS_NAME: "Astra OS"
+  ASTRA_OS_VERSION: "1.0.0"
+  ASTRA_OS_CURRENCY: "USD"
+  ASTRA_OS_TIMEZONE: "UTC"
+
+  ASTRA_FEATURE_CAMPAIGNS: "true"
+  ASTRA_FEATURE_AGENTS: "true"
+  ASTRA_FEATURE_WORKFLOWS: "true"
+  ASTRA_FEATURE_SOCIAL: "true"
+  ASTRA_FEATURE_ANALYTICS: "true"
+  ASTRA_SHADOW_MODE: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: astraos-nginx
+  namespace: astraos
+  labels:
+    app.kubernetes.io/name: astraos-nginx
+    app.kubernetes.io/part-of: astra-os
+data:
+  default.conf: |
+    upstream php-fpm {
+        server localhost:9000;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+        root /var/www/html/public;
+        index index.php;
+
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        server_tokens off;
+        gzip on;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+            fastcgi_pass php-fpm;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include fastcgi_params;
+            fastcgi_read_timeout 300;
+        }
+
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+        }
+    }

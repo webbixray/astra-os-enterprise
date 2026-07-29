@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: astraos-postgres
+  namespace: astraos
+  labels:
+    app: astraos
+    component: postgres
+    app.kubernetes.io/name: astraos-postgres
+    app.kubernetes.io/part-of: astra-os
+spec:
+  serviceName: astraos-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: astraos
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: astraos
+        component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "astraos"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: astraos-secrets
+                  key: DB_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: astraos-secrets
+                  key: DB_PASSWORD
+            - name: POSTGRES_INITDB_ARGS
+              value: "--encoding=UTF8 --locale=en_US.UTF-8"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - astraos
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - astraos
+            initialDelaySeconds: 5
+            periodSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: astraos-postgres
+  namespace: astraos
+  labels:
+    app: astraos
+    component: postgres
+    app.kubernetes.io/name: astraos-postgres
+    app.kubernetes.io/part-of: astra-os
+spec:
+  selector:
+    app: astraos
+    component: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
