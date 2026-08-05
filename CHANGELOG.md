@@ -5,6 +5,93 @@ All notable changes to the Astra OS Enterprise project are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-05
+
+### 🚀 Production Hardening — v2.1.0
+
+**Astra OS Enterprise** is now production-hardened with enterprise-grade observability, CI/CD, Kubernetes, security, compliance, and testing infrastructure.
+
+### Added
+
+#### Observability Stack
+- **Prometheus Metrics** — 4 metric classes (HTTP requests, duration, queue jobs, database queries) with `/metrics` endpoint
+- **OpenTelemetry Distributed Tracing** — Full OTel integration with OTLP exporters, auto-instrumentation middleware
+- **Sentry Error Tracking** — Complete Sentry Laravel integration with DSN, sampling, breadcrumbs, sensitive data filtering
+- **Tempo Distributed Tracing Backend** — ConfigMap for Tempo deployment
+- **Grafana Dashboards** — 3 production dashboards (overview, queue, database)
+- **Prometheus Alerting** — 15+ alerts covering availability, latency, errors, saturation, queues, database, business metrics
+
+#### CI/CD Enhancements
+- **Dependency Review Action** — Fails PRs on HIGH/CRITICAL vulnerabilities, license allowlist (MIT/Apache-2.0/BSD)
+- **Docker Build + Trivy Scan** — Multi-stage build, HIGH/CRITICAL vulnerability scanning, SARIF upload to GitHub Security
+- **SBOM Generation** — SPDX JSON for supply chain transparency
+- **Enhanced Test Workflow** — Feature-specific test filters for targeted validation
+
+#### Kubernetes Production Hardening
+- **PgBouncer Connection Pooling** — ConfigMap, Deployment, Service for PostgreSQL connection pooling
+- **Automated Backups** — Daily/weekly/monthly CronJobs with RBAC (ServiceAccount, Role, RoleBinding)
+- **Redis Split Architecture** — Deployment, Service, PVC for persistent Redis
+- **PostgreSQL StatefulSet** — Fixed with proper labels and configuration
+- **HPA Split** — App + Horizon autoscalers with custom metrics
+- **PodDisruptionBudget** — 2 minimum available for zero-downtime operations
+- **NetworkPolicies** — 5 policies (app, pgbouncer, postgres, redis, monitoring) for zero-trust networking
+- **ExternalSecrets Operator** — AWS Secrets Manager integration (SecretStore, ExternalSecrets for DB credentials + API keys)
+- **Grafana Dashboards** — ConfigMaps for overview, queue, database dashboards
+
+#### Security & Feature Flags
+- **SSO/OAuth2 Providers** — Google, GitHub, Microsoft, SAML 2.0 integration via Socialite
+- **Pennant Feature Flags** — 30+ features across Campaign, Agent, Workflow, Social, Analytics, Platform modules with tier-based resolvers
+
+#### Compliance & Operations Documentation
+- **Incident Response Runbook** — SEV-1 to SEV-4 classification, escalation matrix, post-mortem process
+- **SLA/SLO Definitions** — Customer SLAs (99.9% uptime, <200ms p95) + internal SLOs with error budgets
+- **Operations Manual** — Daily/weekly/monthly procedures, deploy, DB, queue, cache operations, capacity planning
+- **COMPLIANCE.md** — GDPR, SOC 2, ISO 27001, vendor risk management, audit trail, retention policies
+
+#### Testing Infrastructure (10 new test files)
+- `PrometheusMetricsTest` — Metrics endpoint, histograms, labels
+- `OpenTelemetryTest` — Tracer provider, spans, exception recording
+- `BackupCommandTest` — Spatie backup config validation
+- `QueueManagementTest` — Queue jobs, Horizon, failed job handling
+- `CacheOperationsTest` — Cache drivers, tags, invalidation
+- `DatabaseOperationsTest` — Connections, migrations, transactions
+- `SecurityHeadersTest` — CSP, HSTS, frame options, rate limiting
+- `ObservabilityEndpointsTest` — Health, metrics, tracing endpoints
+- `SocialEntitiesTest` — SocialPost, SocialMention value objects
+- `EloquentModelsTest` — Organization, Campaign, Agent, Workflow models
+- `CreateAgentUseCaseTest` / `CreateWorkflowUseCaseTest` — Use case validation
+
+#### Domain Fixes
+- **SocialMention::reconstitute()** — 11 explicit typed parameters (was variadic)
+- **SocialPost::reconstitute()** — 12 explicit typed parameters (was variadic)
+- Resolves 76 PHPStan "parameter.notFound" errors
+
+#### Documentation
+- **VERIFICATION.md** — 12-step verification guide (PHPStan, Pint, tests, health endpoints, metrics, Docker, K8s, security audit)
+
+### Changed
+- `composer.json` — Added: `league/iso3166`, `league/iso4217`, `aacotroneo/laravel-saml2`, `sentry/sentry-laravel`, `open-telemetry/api`, `open-telemetry/sdk`, `open-telemetry/exporter-otlp`, `promphp/prometheus_client_php`, `spatie/laravel-backup`, `spatie/laravel-pennant`, `laravel/octane`
+- `.env.example` — 40+ new environment variables for observability, backup, SSO, Octane
+- `bootstrap/app.php` — Registered 6 providers + 2 middleware
+- `config/services.php` — Added SSO provider configuration
+- `k8s/base/kustomization.yaml` — Added all new K8s resources
+- `k8s/overlays/production/staging` — Enabled Prometheus, OpenTelemetry, Sentry, Tempo
+- `k8s/production/hpa.yaml` → `k8s/base/hpa-app.yaml` + `hpa-horizon.yaml` + `pdb-app.yaml`
+
+### Statistics (v2.1.0)
+```
+📁 Total files:     ~520
+🐘 PHP files:       397 (0 syntax errors, 303 strict_types)
+🧪 Test files:      34+ feature/unit test files
+🏛 Domain modules:   8 (Organization, Campaign, Agent, Workflow, Social, Analytics, Common, Billing)
+🎯 API endpoints:   50+ across 15 controllers
+🗄️ Migrations:      26 with full rollback
+📦 Docker services: 6 (app, nginx, postgres, redis, horizon, scheduler)
+☸️ K8s manifests:   35+
+📋 CI/CD workflows: 8
+📐 CHANGELOG lines: ~400
+```
+
 ## [2.0.0] - 2026-07-30
 
 ### 🎉 Production Launch — v2.0.0
@@ -268,6 +355,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Security policy, contributing guide, executive summary
   - 100+ item production readiness checklist
 
+[2.1.0]: https://github.com/webbixray/astra-os-enterprise/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.9.0...v2.0.0
+[1.9.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/webbixray/astra-os-enterprise/compare/v1.1.0...v1.2.0
