@@ -142,6 +142,45 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
 
+      - name: Run Prometheus metrics test
+        run: |
+          php artisan test --filter=PrometheusMetricsTest --parallel
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: astra_os_test
+          DB_USERNAME: astra_os
+          DB_PASSWORD: secret
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
+      - name: Run OpenTelemetry test
+        run: |
+          php artisan test --filter=OpenTelemetryTest --parallel
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: astra_os_test
+          DB_USERNAME: astra_os
+          DB_PASSWORD: secret
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
+      - name: Run backup command test
+        run: |
+          php artisan test --filter=BackupCommandTest --parallel
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: astra_os_test
+          DB_USERNAME: astra_os
+          DB_PASSWORD: secret
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         if: success() || failure()

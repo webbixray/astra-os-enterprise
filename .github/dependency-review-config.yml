@@ -1,0 +1,30 @@
+# Dependency Review Configuration
+# Fails PRs if high/critical vulnerabilities are introduced
+
+fail-on-severity: high
+
+# Allowlist for known false positives or acceptable risks
+allowlist:
+  # Example: allow specific vulnerable packages if they have no fix yet
+  # - name: "package-name"
+  #   version: "1.2.3"
+  #   reason: "No fix available, monitoring upstream"
+
+# Scope of review
+scope:
+  - runtime
+  - development
+
+# Comment on PR with findings
+comment-on-alert: true
+
+# Include licenses check
+include-licenses: true
+allowed-licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - LGPL-2.1-only
+  - LGPL-3.0-only

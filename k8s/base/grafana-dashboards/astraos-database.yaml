@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-astraos-database
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  astraos-database.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.8}, {"color": "red", "value": 0.95}]}, "unit": "percentunit"}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto"},
+          "pluginVersion": "8.0.0",
+          "targets": [{"expr": "sum(pgbouncer_pool_total_connections) / sum(pgbouncer_pool_max_connections)", "legendFormat": "Pool Utilization", "refId": "A"}],
+          "title": "PgBouncer Pool Utilization",
+          "type": "gauge"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "red", "value": 1}]}, "unit": "s"}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto"},
+          "pluginVersion": "8.0.0",
+          "targets": [{"expr": "histogram_quantile(0.95, sum(rate(astra_os_database_query_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P95", "refId": "A"}],
+          "title": "Query Latency P95",
+          "type": "gauge"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+          "pluginVersion": "8.0.0",
+          "targets": [
+            {"expr": "sum(rate(astra_os_database_queries_total[5m])) by (type)", "legendFormat": "{{type}}", "refId": "A"}
+          ],
+          "title": "Query Rate by Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 4,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+          "pluginVersion": "8.0.0",
+          "targets": [
+            {"expr": "sum(rate(astra_os_database_queries_total[5m])) by (connection)", "legendFormat": "{{connection}}", "refId": "A"}
+          ],
+          "title": "Query Rate by Connection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 60}]}, "unit": "s"}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 8},
+          "id": 5,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto"},
+          "pluginVersion": "8.0.0",
+          "targets": [{"expr": "pg_replication_lag_seconds", "legendFormat": "Replication Lag", "refId": "A"}],
+          "title": "Replication Lag (s)",
+          "type": "gauge"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.8}, {"color": "red", "value": 0.9}]}, "unit": "percentunit"}, "overrides": []},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 8},
+          "id": 6,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto"},
+          "pluginVersion": "8.0.0",
+          "targets": [{"expr": "sum(container_memory_usage_bytes{container=\"postgresql\"}) / sum(container_spec_memory_limit_bytes{container=\"postgresql\"})", "legendFormat": "Memory Usage", "refId": "A"}],
+          "title": "PostgreSQL Memory %",
+          "type": "gauge"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["astra-os", "database", "postgresql", "pgbouncer"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "",
+      "title": "Astra OS - Database",
+      "uid": "astraos-database",
+      "version": 1
+    }

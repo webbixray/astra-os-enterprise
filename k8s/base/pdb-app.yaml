@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: astra-os-app-pdb
+  namespace: astraos
+  labels:
+    app: astra-os
+    tier: backend
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: astra-os
+      tier: backend

@@ -51,6 +51,14 @@ configMapGenerator:
       - APP_ENV=production
       - APP_DEBUG=false
       - LOG_LEVEL=warning
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PATH=metrics
+      - PROMETHEUS_NAMESPACE=astra_os
+      - OTEL_ENABLED=true
+      - OTEL_SERVICE_NAME=astra-os
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - SENTRY_ENABLED=true
+      - SENTRY_ENVIRONMENT=production
 
 patchesStrategicMerge:
   - |-
@@ -70,6 +78,13 @@ patchesStrategicMerge:
                 limits:
                   cpu: 2000m
                   memory: 2Gi
+              env:
+                - name: PROMETHEUS_ENABLED
+                  value: "true"
+                - name: OTEL_ENABLED
+                  value: "true"
+                - name: SENTRY_ENABLED
+                  value: "true"
             - name: nginx
               resources:
                 requests:

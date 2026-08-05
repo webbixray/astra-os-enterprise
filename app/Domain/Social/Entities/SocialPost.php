@@ -181,11 +181,34 @@ class SocialPost
      * @param DateTimeImmutable         $updatedAt
      * @return self
      */
-    public static function reconstitute(...$args): self
-    {
-        $post = new self(...array_slice($args, 0, 10));
-        $post->setCreatedAt($args[10]);
-        $post->setUpdatedAt($args[11]);
+    public static function reconstitute(
+        UuidInterface $id,
+        UuidInterface $accountId,
+        ?UuidInterface $campaignId,
+        string $content,
+        array $media,
+        ?DateTimeImmutable $scheduledAt,
+        ?DateTimeImmutable $publishedAt,
+        string $status,
+        ?string $platformPostId,
+        array $metrics,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt
+    ): self {
+        $post = new self(
+            $id,
+            $accountId,
+            $campaignId,
+            $content,
+            $media,
+            $scheduledAt,
+            $publishedAt,
+            $status,
+            $platformPostId,
+            $metrics
+        );
+        $post->setCreatedAt($createdAt);
+        $post->setUpdatedAt($updatedAt);
 
         return $post;
     }

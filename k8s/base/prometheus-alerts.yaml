@@ -1,0 +1,244 @@
+groups:
+  - name: astra-os.rules
+    interval: 30s
+    rules:
+      # ============================================================
+      # Availability Alerts
+      # ============================================================
+      - alert: AstraOSHighErrorRate
+        expr: |
+          sum(rate(astra_os_http_requests_total{status=~"5.."}[5m])) 
+          / sum(rate(astra_os_http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High 5xx error rate ({{ $value | humanizePercentage }})"
+          description: "5xx error rate exceeded 1% for 5 minutes"
+          runbook: "https://github.com/astraos/enterprise/blob/main/docs/runbooks/INCIDENT_RESPONSE.md#1-database-connection-exhaustion"
+
+      - alert: AstraOSServiceDown
+        expr: up{job="astra-os"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Astra OS service down"
+          description: "Target {{ $labels.instance }} has been down for 2 minutes"
+
+      # ============================================================
+      # Latency Alerts
+      # ============================================================
+      - alert: AstraOSHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(astra_os_http_request_duration_seconds_bucket[5m])) by (le, path)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High P95 latency ({{ $value }}s)"
+          description: "P95 latency exceeded 2 seconds for 5 minutes on path {{ $labels.path }}"
+
+      - alert: AstraOSHighLatencyP99
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(astra_os_http_request_duration_seconds_bucket[5m])) by (le, path)
+          ) > 5
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Critical P99 latency ({{ $value }}s)"
+          description: "P99 latency exceeded 5 seconds for 5 minutes"
+
+      # ============================================================
+      # Queue Alerts
+      # ============================================================
+      - alert: AstraOSQueueBacklog
+        expr: |
+          sum(astra_os_queue_jobs_pending) > 10000
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Queue backlog high ({{ $value }} jobs)"
+          description: "More than 10,000 jobs pending for 10 minutes"
+
+      - alert: AstraOSQueueFailureRate
+        expr: |
+          sum(rate(astra_os_queue_job_failed_total[10m])) 
+          / sum(rate(astra_os_queue_jobs_total[10m])) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Queue failure rate high ({{ $value | humanizePercentage }})"
+          description: "More than 2% of queue jobs failing"
+
+      # ============================================================
+      # Database Alerts
+      # ============================================================
+      - alert: AstraOSDatabaseConnectionExhaustion
+        expr: |
+          sum(pgbouncer_pool_total_connections) / sum(pgbouncer_pool_max_connections) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Database connection pool 85% utilized"
+          description: "PgBouncer connection pool nearing capacity"
+
+      - alert: AstraOSDatabaseSlowQueries
+        expr: |
+          sum(rate(astra_os_database_query_duration_seconds_bucket{le="1"}[5m])) 
+          / sum(rate(astra_os_database_query_duration_seconds_count[5m])) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Database slow queries detected"
+          description: "More than 5% of queries taking longer than 1 second"
+
+      - alert: AstraOSReplicationLag
+        expr: |
+          pg_replication_lag_seconds > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "PostgreSQL replication lag ({{ $value }}s)"
+          description: "Replica lag exceeded 10 seconds"
+
+      # ============================================================
+      # Resource Alerts
+      # ============================================================
+      - alert: AstraOSHighMemoryUsage
+        expr: |
+          sum(container_memory_usage_bytes{container="php-fpm"}) 
+          / sum(container_spec_memory_limit_bytes{container="php-fpm"}) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "PHP-FPM memory usage > 85%"
+          description: "Memory usage at {{ $value | humanizePercentage }} of limit"
+
+      - alert: AstraOSHighCPUUsage
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container="php-fpm"}[5m])) 
+          / sum(container_spec_cpu_quota{container="php-fpm"}/container_spec_cpu_period{container="php-fpm"}) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "PHP-FPM CPU usage > 80%"
+          description: "CPU usage at {{ $value | humanizePercentage }} of limit"
+
+      - alert: AstraOSDiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/var/lib/postgresql/data"} 
+           / node_filesystem_size_bytes{mountpoint="/var/lib/postgresql/data"}) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "PostgreSQL disk space < 10%"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining"
+
+      # ============================================================
+      # Backup Alerts
+      # ============================================================
+      - alert: AstraOSBackupFailed
+        expr: |
+          increase(astra_os_backup_failed_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Backup job failed"
+          description: "Backup job {{ $labels.job }} failed at {{ $value }}"
+
+      - alert: AstraOSBackupTooOld
+        expr: |
+          time() - astra_os_backup_last_success_timestamp > 86400
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "No successful backup in 24 hours"
+          description: "Last successful backup was {{ $value | humanizeDuration }} ago"
+
+      # ============================================================
+      # SSL Certificate Alerts
+      # ============================================================
+      - alert: AstraOSSSLCertificateExpiring
+        expr: |
+          ssl_certificate_expiration_timestamp_seconds - time() < 2592000
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "SSL certificate expiring in 30 days"
+          description: "Certificate for {{ $labels.domain }} expires on {{ $value | humanizeDate }}"
+
+      # ============================================================
+      # Error Budget Alerts
+      # ============================================================
+      - alert: AstraOSErrorBudgetBurnRateCritical
+        expr: |
+          (
+            sum(rate(astra_os_http_requests_total{status=~"5.."}[1h])) 
+            / sum(rate(astra_os_http_requests_total[1h]))
+          ) > 0.00144  # 14.4x burn rate for 99.9% SLO
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Error budget burn rate critical (14.4x)"
+          description: "Burning error budget at {{ $value | humanize }}x normal rate"
+
+      - alert: AstraOSErrorBudgetBurnRateWarning
+        expr: |
+          (
+            sum(rate(astra_os_http_requests_total{status=~"5.."}[1h])) 
+            / sum(rate(astra_os_http_requests_total[1h]))
+          ) > 0.0006  # 6x burn rate
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Error budget burn rate elevated (6x)"
+          description: "Burning error budget at {{ $value | humanize }}x normal rate"
+
+      # ============================================================
+      # Business Metric Alerts
+      # ============================================================
+      - alert: AstraOSCampaignLaunchFailures
+        expr: |
+          increase(astra_os_campaign_launch_failed_total[1h]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          team: product
+        annotations:
+          summary: "Multiple campaign launch failures"
+          description: "{{ $value }} campaigns failed to launch in the last hour"

@@ -9,11 +9,42 @@ resources:
   - service.yaml
   - ingress.yaml
   - configmap.yaml
-  - hpa.yaml
+  - hpa-app.yaml
+  - hpa-horizon.yaml
+  - pdb-app.yaml
   - postgres-statefulset.yaml
   - redis-deployment.yaml
+  - redis-service.yaml
+  - redis-pvc.yaml
   - network-policy.yaml
   - pvc.yaml
+  - backup-cronjob-daily.yaml
+  - backup-cronjob-weekly.yaml
+  - backup-cronjob-monthly.yaml
+  - backup-serviceaccount.yaml
+  - backup-role.yaml
+  - backup-rolebinding.yaml
+  - servicemonitor.yaml
+  - podmonitor.yaml
+  - tempo-configmap.yaml
+  - pgbouncer-configmap.yaml
+  - pgbouncer-deployment.yaml
+  - pgbouncer-service.yaml
+  - prometheus-alerts.yaml
+  - grafana-dashboards/astraos-overview.yaml
+  - grafana-dashboards/astraos-queue.yaml
+  - grafana-dashboards/astraos-database.yaml
+  - network-policies/app-policy.yaml
+  - network-policies/pgbouncer-policy.yaml
+  - network-policies/postgresql-policy.yaml
+  - network-policies/redis-policy.yaml
+  - network-policies/monitoring-policy.yaml
+  - external-secrets/namespace.yaml
+  - external-secrets/helmrepository.yaml
+  - external-secrets/helmrelease.yaml
+  - external-secrets/secretstore.yaml
+  - external-secrets/externalsecret-db.yaml
+  - external-secrets/externalsecret-api.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: kustomize

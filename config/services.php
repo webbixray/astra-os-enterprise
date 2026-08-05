@@ -77,4 +77,40 @@ return [
         'batch_size' => env('NOTIFICATION_BATCH_SIZE', 100),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | SSO Configuration
+    |--------------------------------------------------------------------------
+    */
+    'sso' => [
+        'enabled' => env('SSO_ENABLED', false),
+        'passport_enabled' => env('SSO_PASSPORT_ENABLED', false),
+        'providers' => [
+            'google' => [
+                'client_id' => env('SSO_GOOGLE_CLIENT_ID'),
+                'client_secret' => env('SSO_GOOGLE_CLIENT_SECRET'),
+                'redirect' => env('SSO_GOOGLE_REDIRECT'),
+                'provider_class' => '\\Laravel\\Socialite\\Two\\GoogleProvider',
+            ],
+            'github' => [
+                'client_id' => env('SSO_GITHUB_CLIENT_ID'),
+                'client_secret' => env('SSO_GITHUB_CLIENT_SECRET'),
+                'redirect' => env('SSO_GITHUB_REDIRECT'),
+                'provider_class' => '\\Laravel\\Socialite\\Two\\GitHubProvider',
+            ],
+            'microsoft' => [
+                'client_id' => env('SSO_MICROSOFT_CLIENT_ID'),
+                'client_secret' => env('SSO_MICROSOFT_CLIENT_SECRET'),
+                'redirect' => env('SSO_MICROSOFT_REDIRECT'),
+                'provider_class' => '\\Laravel\\Socialite\\Two\\MicrosoftProvider',
+            ],
+            'saml' => [
+                'client_id' => env('SSO_SAML_CLIENT_ID'),
+                'client_secret' => env('SSO_SAML_CLIENT_SECRET'),
+                'redirect' => env('SSO_SAML_REDIRECT'),
+                'provider_class' => '\\Aacotroneo\\Saml2\\Saml2Provider',
+            ],
+        ],
+    ],
+
 ];

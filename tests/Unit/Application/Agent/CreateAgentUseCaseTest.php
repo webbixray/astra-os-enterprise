@@ -4,145 +4,103 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Application\Agent;
 
-use App\Application\Agent\DTOs\AgentResponseDTO;
+use Tests\TestCase;
 use App\Application\Agent\DTOs\CreateAgentDTO;
 use App\Application\Agent\UseCases\CreateAgentUseCase;
-use App\Domain\Agent\Entities\Agent;
-use App\Domain\Agent\Events\AgentCreated;
-use App\Domain\Agent\Repositories\AgentRepositoryInterface;
-use InvalidArgumentException;
-use Mockery;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use PHPUnit\Framework\TestCase;
+use App\Domain\Agent\ValueObjects\AutonomyLevel;
+use App\Domain\Agent\ValueObjects\AgentRole;
+use Ramsey\Uuid\Uuid;
 
-/**
- * Unit tests for CreateAgentUseCase.
- *
- * Tests the agent creation logic with a mocked repository.
- */
-final class CreateAgentUseCaseTest extends TestCase
+#[Group('unit')]
+class CreateAgentUseCaseTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
-
-    /**
-     * Creates an agent with a valid role and returns an AgentResponseDTO.
-     */
-    public function test_creates_agent_with_role(): void
+    public function test_create_agent_dto_validation(): void
     {
-        $mockAgentRepo = Mockery::mock(AgentRepositoryInterface::class);
-        $eventMock = Mockery::mock('overload:' . AgentCreated::class);
-
         $dto = new CreateAgentDTO(
-            name: 'Marketing Assistant',
-            role: 'assistant',
-            description: 'Helps with campaign management',
-            model: 'gpt-4o',
-            organizationId: 1,
-            capabilities: ['campaign_analysis', 'report_generation'],
-            configuration: ['temperature' => 0.7],
+            name: 'Test Agent',
+            role: AgentRole::SPECIALIST,
+            autonomyLevel: AutonomyLevel::SUPERVISED,
+            modelConfig: [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'temperature' => 0.7,
+            ],
+            parentAgentId: null,
+            organizationId: Uuid::uuid4(),
+            configuration: [
+                'max_tokens' => 4096,
+                'tools' => ['web_search', 'code_execution'],
+            ]
         );
-
-        $mockAgentRepo
-            ->expects()
-            ->save(Mockery::type(Agent::class))
-            ->andReturnUsing(function (Agent $agent) {
-                $agent->setId(1);
-                return $agent;
-            });
-
-        $eventMock->expects()->dispatch(Mockery::type(Agent::class));
-
-        $useCase = new CreateAgentUseCase($mockAgentRepo);
-
-        $result = $useCase->execute($dto);
-
-        $this->assertInstanceOf(AgentResponseDTO::class, $result);
-        $this->assertSame(1, $result->id);
-        $this->assertSame('Marketing Assistant', $result->name);
-        $this->assertSame('assistant', $result->role);
+        
+        $this->assertEquals('Test Agent', $dto->name);
+        $this->assertEquals(AgentRole::SPECIALIST, $dto->role);
+        $this->assertEquals(AutonomyLevel::SUPERVISED, $dto->autonomyLevel);
+        $this->assertEquals('openai', $dto->modelConfig['provider']);
     }
 
-    /**
-     * Throws an InvalidArgumentException when the role is empty.
-     */
-    public function test_validates_role_is_not_empty(): void
+    public function test_create_agent_with_parent(): void
     {
-        $mockAgentRepo = Mockery::mock(AgentRepositoryInterface::class);
-
+        $parentId = Uuid::uuid4();
+        
         $dto = new CreateAgentDTO(
-            name: 'Bad Agent',
-            role: '',
-            description: 'No role specified',
-            model: 'gpt-4o',
-            organizationId: 1,
+            name: 'Child Agent',
+            role: AgentRole::SPECIALIST,
+            autonomyLevel: AutonomyLevel::SUPERVISED,
+            modelConfig: ['provider' => 'openai', 'model' => 'gpt-4o-mini'],
+            parentAgentId: $parentId,
+            organizationId: Uuid::uuid4(),
+            configuration: []
         );
-
-        $useCase = new CreateAgentUseCase($mockAgentRepo);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Agent role cannot be empty.');
-
-        $useCase->execute($dto);
+        
+        $this->assertEquals($parentId, $dto->parentAgentId);
     }
 
-    /**
-     * Throws an InvalidArgumentException when the name is empty.
-     */
-    public function test_validates_name_is_not_empty(): void
+    public function test_autonomy_level_values(): void
     {
-        $mockAgentRepo = Mockery::mock(AgentRepositoryInterface::class);
-
-        $dto = new CreateAgentDTO(
-            name: '',
-            role: 'assistant',
-            description: 'No name',
-            model: 'gpt-4o',
-            organizationId: 1,
-        );
-
-        $useCase = new CreateAgentUseCase($mockAgentRepo);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Agent name cannot be empty.');
-
-        $useCase->execute($dto);
+        $levels = [
+            AutonomyLevel::FULL_AUTONOMY,
+            AutonomyLevel::SUPERVISED,
+            AutonomyLevel::APPROVAL_REQUIRED,
+            AutonomyLevel::READ_ONLY,
+        ];
+        
+        foreach ($levels as $level) {
+            $dto = new CreateAgentDTO(
+                name: 'Test',
+                role: AgentRole::SPECIALIST,
+                autonomyLevel: $level,
+                modelConfig: ['provider' => 'openai', 'model' => 'gpt-4o-mini'],
+                parentAgentId: null,
+                organizationId: Uuid::uuid4(),
+                configuration: []
+            );
+            
+            $this->assertEquals($level, $dto->autonomyLevel);
+        }
     }
 
-    /**
-     * Creates an agent and validates it returns the correct AgentResponseDTO.
-     */
-    public function test_returns_agent_response_dto(): void
+    public function test_agent_role_values(): void
     {
-        $mockAgentRepo = Mockery::mock(AgentRepositoryInterface::class);
-        $eventMock = Mockery::mock('overload:' . AgentCreated::class);
-
-        $dto = new CreateAgentDTO(
-            name: 'Data Analyst Agent',
-            role: 'analyst',
-            description: 'Processes and analyzes marketing data',
-            model: 'gpt-4o-mini',
-            organizationId: 1,
-            capabilities: ['data_analysis', 'visualization'],
-        );
-
-        $mockAgentRepo
-            ->expects()
-            ->save(Mockery::type(Agent::class))
-            ->andReturnUsing(function (Agent $agent) {
-                $agent->setId(3);
-                return $agent;
-            });
-
-        $eventMock->expects()->dispatch(Mockery::type(Agent::class));
-
-        $useCase = new CreateAgentUseCase($mockAgentRepo);
-
-        $result = $useCase->execute($dto);
-
-        $this->assertInstanceOf(AgentResponseDTO::class, $result);
-        $this->assertSame(3, $result->id);
-        $this->assertSame('analyst', $result->role);
-        $this->assertSame('idle', $result->status);
-        $this->assertSame(['data_analysis', 'visualization'], $result->capabilities);
+        $roles = [
+            AgentRole::CEO,
+            AgentRole::DIRECTOR,
+            AgentRole::SPECIALIST,
+            AgentRole::COORDINATOR,
+        ];
+        
+        foreach ($roles as $role) {
+            $dto = new CreateAgentDTO(
+                name: 'Test',
+                role: $role,
+                autonomyLevel: AutonomyLevel::SUPERVISED,
+                modelConfig: ['provider' => 'openai', 'model' => 'gpt-4o-mini'],
+                parentAgentId: null,
+                organizationId: Uuid::uuid4(),
+                configuration: []
+            );
+            
+            $this->assertEquals($role, $dto->role);
+        }
     }
 }

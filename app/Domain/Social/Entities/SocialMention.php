@@ -172,11 +172,32 @@ class SocialMention
      * @param DateTimeImmutable $updatedAt
      * @return self
      */
-    public static function reconstitute(...$args): self
-    {
-        $mention = new self(...array_slice($args, 0, 9));
-        $mention->setCreatedAt($args[9]);
-        $mention->setUpdatedAt($args[10]);
+    public static function reconstitute(
+        UuidInterface $id,
+        string $platform,
+        string $mentionUrl,
+        string $authorName,
+        string $content,
+        string $sentiment,
+        int $reach,
+        ?string $aiSuggestedResponse,
+        string $status,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt
+    ): self {
+        $mention = new self(
+            $id,
+            $platform,
+            $mentionUrl,
+            $authorName,
+            $content,
+            $sentiment,
+            $reach,
+            $aiSuggestedResponse,
+            $status
+        );
+        $mention->setCreatedAt($createdAt);
+        $mention->setUpdatedAt($updatedAt);
 
         return $mention;
     }

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: astraos-redis
+  namespace: astraos
+  labels:
+    app: astraos
+    component: redis
+    app.kubernetes.io/name: astraos-redis
+    app.kubernetes.io/part-of: astra-os
+spec:
+  selector:
+    app: astraos
+    component: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

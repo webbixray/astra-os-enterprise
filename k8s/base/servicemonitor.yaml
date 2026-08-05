@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: astra-os-servicemonitor
+  namespace: astraos
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: astra-os
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scheme: http
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,15 +21,25 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         },
     )
+    ->withProviders([
+        \\App\\Providers\\OpenTelemetryServiceProvider::class,
+        \\App\\Providers\\PrometheusServiceProvider::class,
+        \\App\\Providers\\SentryServiceProvider::class,
+        \\App\\Providers\\OctaneServiceProvider::class,
+        \\App\\Providers\\SsoServiceProvider::class,
+        \\App\\Providers\\SanctumServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
-        // Global middleware
-        $middleware->appendToGroup('api', [
-            \App\Http\Middleware\ForceJsonResponse::class,
-            \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\InputSanitizer::class,
-            \App\Http\Middleware\RequestMetrics::class,
-            \App\Http\Middleware\CacheResponse::class,
-        ]);
+            // Global middleware
+            $middleware->appendToGroup('api', [
+                \\App\\Http\\Middleware\\ForceJsonResponse::class,
+                \\App\\Http\\Middleware\\SecurityHeaders::class,
+                \\App\\Http\\Middleware\\InputSanitizer::class,
+                \\App\\Http\\Middleware\\RequestMetrics::class,
+                \\App\\Http\\Middleware\\CacheResponse::class,
+                \\App\\Http\\Middleware\\PrometheusMetrics::class,
+                \\App\\Http\\Middleware\\OpenTelemetryMiddleware::class,
+            ]);
 
         // Register middleware aliases
         $middleware->alias([

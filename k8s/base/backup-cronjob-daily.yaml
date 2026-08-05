@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: astra-os-backup-daily
+  namespace: astraos
+  labels:
+    app: astra-os
+    component: backup
+    schedule: daily
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: astra-os-backup
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: astra-os-api:latest
+              imagePullPolicy: Always
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  php artisan backup:run --only-db --destination=s3
+                  php artisan backup:run --only-files --destination=s3
+                  php artisan backup:clean
+              env:
+                - name: APP_ENV
+                  value: production
+                - name: BACKUP_DISK
+                  value: s3
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: astra-os-backup-secrets
+                      key: aws-access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: astra-os-backup-secrets
+                      key: aws-secret-access-key
+                - name: S3_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: astra-os-config
+                      key: backup-bucket
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"

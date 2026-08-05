@@ -79,21 +79,3 @@ spec:
           requests:
             storage: 50Gi
         storageClassName: standard
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: astraos-postgres
-  namespace: astraos
-  labels:
-    app: astraos
-    component: postgres
-    app.kubernetes.io/name: astraos-postgres
-    app.kubernetes.io/part-of: astra-os
-spec:
-  selector:
-    app: astraos
-    component: postgres
-  ports:
-    - port: 5432
-      targetPort: 5432

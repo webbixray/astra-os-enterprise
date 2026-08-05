@@ -196,6 +196,48 @@ jobs:
       - name: Security Checker
         uses: symfonycorp/security-checker-action@v5
 
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        if: github.event_name == 'pull_request'
+        with:
+          config-file: '.github/dependency-review-config.yml'
+          fail-on-severity: high
+
+  docker:
+    name: Docker Build & Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, code-style, security]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: astra-os-api:test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: astra-os-api:test
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
   js-build:
     name: Frontend (Vite Build)
     runs-on: ubuntu-latest
@@ -220,7 +262,7 @@ jobs:
     name: Tests (PHPUnit)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [lint, code-style, phpstan, security, js-build]
+    needs: [lint, code-style, phpstan, security, docker, js-build]
     services:
       postgres:
         image: postgres:16-alpine
@@ -355,7 +397,7 @@ jobs:
   notify:
     name: Notify on Failure
     runs-on: ubuntu-latest
-    needs: [tests, lint, code-style, phpstan, security, js-build]
+    needs: [tests, lint, code-style, phpstan, security, docker, js-build]
     if: failure() && github.ref == 'refs/heads/main'
     steps:
       - name: Slack Notification

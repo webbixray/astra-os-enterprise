@@ -51,3 +51,11 @@ configMapGenerator:
       - APP_ENV=staging
       - APP_DEBUG=true
       - LOG_LEVEL=debug
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PATH=metrics
+      - PROMETHEUS_NAMESPACE=astra_os
+      - OTEL_ENABLED=true
+      - OTEL_SERVICE_NAME=astra-os
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - SENTRY_ENABLED=true
+      - SENTRY_ENVIRONMENT=staging
